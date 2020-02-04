@@ -1,28 +1,33 @@
+%Following Algorithm 1 in section 2.4 of arXiv:1509.08391
+
+
+%precision for the termination condition for the determination of the
+%solution of <<x-x0-0.5delta>>=0
 epsilon = 0.00001;
 
 
-Emax = 40;
-delta = 0.1;
-Njacknife = 1;
-Naverage = 100000;
-
-% x0 = zeros(1,Emax/delta);
-% a = zeros(1,Emax/delta);
-% a_i = zeros(1:Njacknife); 
+Emax = 40; %Maximum valueof x we want to sample
+delta = 0.1; %Size of the interval
+Njacknife = 1; %Number of Jacknife blocks to estimate the stochastic error of a
+Naverage = 100000; %Number of random numbers we sample to calculate the reweighted expectation value <<x-x0-0.5*delta>> 
 
 
-for Eint = 1:(Emax/delta) %loop through the energy intervals
+
+
+for Eint = 1:(Emax/delta) %loop through the intervals from zero to Emax with size delta
     
     
-    %setting the interval
+    %setting the lower end of the interval
     x0(Eint) = (Eint-1)*delta;
     
-    a(Eint) = 0.0;
+    a(Eint) = 0.0; %initial guess for a
     
-    for jcount = 1:Njacknife
+    for jcount = 1:Njacknife %loop for Jacknife error analysis
         
         
         %initial values for a_i
+        %initial value of a_i is set to 0 for the first interval, all the following are set to the value of
+        %a of the previous interval
         
         if(Eint == 1)
             
@@ -37,13 +42,13 @@ for Eint = 1:(Emax/delta) %loop through the energy intervals
         end
         
         
-        NewtRaphcount = 0;
-        
-        %Reweightexpect = 1;
+        RobMarchcount = 0; %Setting the counter for the number Robson March iterations
         
         
         
-        while abs(a_i_new-a_i(jcount)) > epsilon %&& NewtRaphcount < 50
+        
+        
+        while abs(a_i_new-a_i(jcount)) > epsilon %&& RobMarchcount < 50 %termination condition for the Robson March iteration
             
             a_i(jcount) = a_i_new;
             
@@ -52,57 +57,58 @@ for Eint = 1:(Emax/delta) %loop through the energy intervals
             y2=0.5*(erf(8*a_i(jcount)+(x0(Eint)+delta)/16)+1);
             
             
-            
+            %Calculating the reweighted expectation value <<x-x0-05delta>>
             Reweightexpect = 0;
-            Reweightexpect2 = 0;
+            %Reweightexpect2 = 0;
             
             for Ncount = 1:Naverage
                 
-                %uniform variable in the right interval
+                %sample uniform variable in the right interval
                 y = (y2-y1).*rand() + y1;
                 
-                %sample x from the distribution exp(-x^2/16^2)*exp(-ax)
+                %sample x from the distribution
+                %exp(-x^2/16^2)*exp(-ax)using en.wikipedia.org/wiki/Inverse_transform_sampling
                 x = 16*erfinv(2*y-1)-128*a_i(jcount);
                 
                 
                 
                 
-                %Vector for histogram
+                %Vector for histogram (currently unused)
                 Q(Ncount) = x;
                 
-                %calculate expectation value
+                %calculate reweighted expectation value <<x-x0-0.5delta>>
                 if ((x >= x0(Eint)) && (x <= (x0(Eint)+delta)))
                 
                     
                     %Reweightexpect = Reweightexpect + x - x0(Eint) - 0.5*delta;
                     Reweightexpect = Reweightexpect + x;
-                    Reweightexpect2 = Reweightexpect2 + (x-x0(Eint) - 0.5*delta)^2;
-                    x;
-                    Ncount;
+                    %Reweightexpect2 = Reweightexpect2 + (x-x0(Eint) - 0.5*delta)^2;
+                    
                     
                 else
                     Ncount = Ncount - 1;
                     
                 end
-                Ncount;
-                Reweightexpect;
-                x;
+             
             end
             
             
             %calculate expectation value
             %Reweightexpect = Reweightexpect/Naverage;
             Reweightexpect = Reweightexpect/Naverage - x0(Eint) - 0.5*delta
-            Reweightexpect2 = Reweightexpect2/Naverage;
             
-            var = Reweightexpect2 - Reweightexpect^2;
             
-            %NewtRaph step
-            a_i_new = a_i(jcount) + 12/(delta^2*(NewtRaphcount+1))*Reweightexpect
+            %Reweightexpect2 = Reweightexpect2/Naverage;
+            %var = Reweightexpect2 - Reweightexpect^2;
+            
+            %Robson Monroe step
+            a_i_new = a_i(jcount) + 12/(delta^2*(RobMarchcount+1))*Reweightexpect
             %a_i_new = a_i(jcount) + Reweightexpect/var;
-            NewtRaphcount = NewtRaphcount + 1;
+            RobMarchcount = RobMarchcount + 1;
         end
-        NewtRaphcount;
+        
+        
+        RobMarchcount;
         (Eint-1)*delta
         
         %calculate a by averaging all a_i(jcount)
@@ -115,7 +121,7 @@ end
 
 
 
-% 
+% unused histogram
 % x0 = 0;    
 % %a = 0.0;
 % 
