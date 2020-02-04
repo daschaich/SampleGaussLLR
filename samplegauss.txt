@@ -1,0 +1,133 @@
+epsilon = 0.00001;
+
+
+Emax = 40;
+delta = 0.1;
+Njacknife = 1;
+Naverage = 100000;
+
+% x0 = zeros(1,Emax/delta);
+% a = zeros(1,Emax/delta);
+% a_i = zeros(1:Njacknife); 
+
+
+for Eint = 1:(Emax/delta) %loop through the energy intervals
+    
+    
+    %setting the interval
+    x0(Eint) = (Eint-1)*delta;
+    
+    a(Eint) = 0.0;
+    
+    for jcount = 1:Njacknife
+        
+        
+        %initial values for a_i
+        
+        if(Eint == 1)
+            
+            a_i(jcount) = 0.0;
+        
+            a_i_new = -2*epsilon;
+        else
+            
+            a_i(jcount)=a(Eint-1) - 2*epsilon;
+            
+            a_i_new = a(Eint-1);
+        end
+        
+        
+        NewtRaphcount = 0;
+        
+        %Reweightexpect = 1;
+        
+        
+        
+        while abs(a_i_new-a_i(jcount)) > epsilon %&& NewtRaphcount < 50
+            
+            a_i(jcount) = a_i_new;
+            
+            %Finding right interval for uniform variable
+            y1=0.5*(erf(8*a_i(jcount)+x0(Eint)/16)+1);
+            y2=0.5*(erf(8*a_i(jcount)+(x0(Eint)+delta)/16)+1);
+            
+            
+            
+            Reweightexpect = 0;
+            Reweightexpect2 = 0;
+            
+            for Ncount = 1:Naverage
+                
+                %uniform variable in the right interval
+                y = (y2-y1).*rand() + y1;
+                
+                %sample x from the distribution exp(-x^2/16^2)*exp(-ax)
+                x = 16*erfinv(2*y-1)-128*a_i(jcount);
+                
+                
+                
+                
+                %Vector for histogram
+                Q(Ncount) = x;
+                
+                %calculate expectation value
+                if ((x >= x0(Eint)) && (x <= (x0(Eint)+delta)))
+                
+                    
+                    %Reweightexpect = Reweightexpect + x - x0(Eint) - 0.5*delta;
+                    Reweightexpect = Reweightexpect + x;
+                    Reweightexpect2 = Reweightexpect2 + (x-x0(Eint) - 0.5*delta)^2;
+                    x;
+                    Ncount;
+                    
+                else
+                    Ncount = Ncount - 1;
+                    
+                end
+                Ncount;
+                Reweightexpect;
+                x;
+            end
+            
+            
+            %calculate expectation value
+            %Reweightexpect = Reweightexpect/Naverage;
+            Reweightexpect = Reweightexpect/Naverage - x0(Eint) - 0.5*delta
+            Reweightexpect2 = Reweightexpect2/Naverage;
+            
+            var = Reweightexpect2 - Reweightexpect^2;
+            
+            %NewtRaph step
+            a_i_new = a_i(jcount) + 12/(delta^2*(NewtRaphcount+1))*Reweightexpect
+            %a_i_new = a_i(jcount) + Reweightexpect/var;
+            NewtRaphcount = NewtRaphcount + 1;
+        end
+        NewtRaphcount;
+        (Eint-1)*delta
+        
+        %calculate a by averaging all a_i(jcount)
+        a(Eint) = a(Eint) + a_i_new/Njacknife;
+    end
+    a(Eint);
+end
+    
+
+
+
+
+% 
+% x0 = 0;    
+% %a = 0.0;
+% 
+% y1=0.5*(erf(8*a+x0/16)+1);
+% y2=0.5*(erf(8*a+(x0+delta)/16)+1);
+% 
+% 
+% for m = 1 : 1000
+%     
+%     r = (y2-y1).*rand() + y1;
+%     
+%     q = 16*erfinv(2*r-1)-128*a
+%     
+% end
+% histogram(Q)
