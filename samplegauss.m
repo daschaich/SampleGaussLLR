@@ -60,7 +60,7 @@ for Eint = 1:(Emax/delta) %loop through the intervals from zero to Emax with siz
             %Calculating the reweighted expectation value <<x-x0-05delta>>
             Reweightexpect = 0;
             %Reweightexpect2 = 0;
-            
+            Naccumulated = 0;
             for Ncount = 1:Naverage
                 
                 %sample uniform variable in the right interval
@@ -83,20 +83,18 @@ for Eint = 1:(Emax/delta) %loop through the intervals from zero to Emax with siz
                     %Reweightexpect = Reweightexpect + x - x0(Eint) - 0.5*delta;
                     Reweightexpect = Reweightexpect + x;
                     %Reweightexpect2 = Reweightexpect2 + (x-x0(Eint) - 0.5*delta)^2;
-                    
-                    
-                else
-                    Ncount = Ncount - 1;
-                    
+                    Naccumulated = Naccumulated + 1;
                 end
              
             end
             
             
             %calculate expectation value
-            %Reweightexpect = Reweightexpect/Naverage;
-            Reweightexpect = Reweightexpect/Naverage - x0(Eint) - 0.5*delta
-            
+            %Reweightexpect = Reweightexpect/Naccumulated;
+            Reweightexpect = Reweightexpect/Naccumulated - x0(Eint) - 0.5*delta
+
+            % Print number of accumulated samples for sanity checking
+            Naccumulated
             
             %Reweightexpect2 = Reweightexpect2/Naverage;
             %var = Reweightexpect2 - Reweightexpect^2;
