@@ -16,30 +16,34 @@ const double PI = 2*acos(0.0);
 mt19937 rng( random_device{}() ); 
 
 const int d=3; //Dimension
-const int n=20; //length of the lattice
+const int n=5; //length of the lattice
 const int V=pow(n,d); //Number of lattice sites
 
-const int nequi=10000;
-const int nskip=1;
-const int nmeas=1000;
+const int nequi=500;
+const int nskip=500;
+const int nmeas=100;
 
 
 void neibinit(int neighbour[V][2*d]);
 void filllinks(double theta[V][d],int start);
 void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int nsweeps);
 void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int count);
+void calcmonopoledens(double theta[V][d], double M[nmeas], int neighbour[V][2*d], int count);
 double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu);
 double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu, double offer, int sitechange, int muchange);
+double plaqured(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu);
 
 int main()
 {
 	
     rng.seed(time(NULL));
 	
-	double beta=2;
+	double beta=0.01;
+	
 	int neighbour[V][2*d];
 	double theta[V][d];
 	double S[nmeas+1];
+	double M[nmeas+1];
 	
 	
 	neibinit(neighbour);
@@ -48,19 +52,28 @@ int main()
   	myfileaction.open ("Actionorder.txt");
 	ofstream myfileconfig;
 	myfileconfig.open("Configuration.txt");
-	//metropolisupdate(theta,beta,neighbour,nequi); //equilibration
+	ofstream myfilemonopoledens;
+	myfilemonopoledens.open("monopoledensity.txt");
+	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
 	
-	calcaction(theta,S,neighbour,0);
+	//calcaction(theta,S,neighbour,0);
+	//calcmonopoledens(theta,M,neighbour,0);
 	
-	cout << "S start: " << S[0] << endl;
-	myfileaction << S[0] << " \n";
+	//cout << "S start: " << S[0] << endl;
+	//myfileaction << S[0] << " \n";
 	
-	
-	for(int imeas=1;imeas<=nmeas;imeas++)
+while(beta<=2)
+{
+	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
+		
+	for(int imeas=0;imeas<nmeas;imeas++)
 	{
 		metropolisupdate(theta,beta,neighbour,nskip);
 		calcaction(theta,S,neighbour,imeas);
+		calcmonopoledens(theta,M,neighbour,imeas);
 		myfileaction << S[imeas] << " \n";
+		myfilemonopoledens << M[imeas] << " \n";
+		/*
 		for(int i=0;i<V;i++)
 		{
 			for(int j=0;j<2;j++)
@@ -69,12 +82,19 @@ int main()
 			}
 			
 		}
-		cout << imeas << " " << S[imeas] << endl;
-			
-	} 
-	
+		*/
+		//cout << imeas << " " << M[imeas] << " " << int(M[imeas]/(2*PI)) <<" " << (M[imeas]/(2*PI)-int(M[imeas]/(2*PI)))*2*PI << endl;
+		//cout << imeas << " " << S[imeas] << endl;	
+	}
+	 
+	beta = beta + 0.1;
+	cout << beta << endl;
+
+}
+
 	myfileaction.close();
 	myfileconfig.close();
+	myfilemonopoledens.close();
 	
 	/*
 	for(int i=0;i<V;i++)
@@ -153,6 +173,7 @@ void  neibinit ( int  neib[V][2*d] )
 void filllinks(double theta[V][d],int start)
 {
 	uniform_real_distribution<> dist(-PI, PI);
+	//uniform_real_distribution<> dist(0, 2*PI);
 	
 	if(start == 1)
 	{
@@ -175,6 +196,7 @@ void filllinks(double theta[V][d],int start)
 			}
 		}
 	}
+	
 	if(start == 3)
 	{
 		for(int i=0;i<V;i++)
@@ -185,6 +207,7 @@ void filllinks(double theta[V][d],int start)
 			}
 		}
 	}
+	
 }
 
 
@@ -192,6 +215,7 @@ void filllinks(double theta[V][d],int start)
 void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int nsweeps)
 {
 	uniform_real_distribution<> dist(-PI, PI);
+	//uniform_real_distribution<> dist(0, 2*PI);
 	uniform_real_distribution<> dist1(0,1);
 	double offer; //new offered linkvar
 	double rho, r; //Probabilities for acceptance/rejection
@@ -209,7 +233,7 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 				{
 					//rho = exp(beta*(-cos(offer+theta[neighbour[i][0]][1]-theta[neighbour[i][1]][0]-theta[i][1])-cos(theta[neighbour[i][3]][0]+theta[neighbour[neighbour[i][0]][3]][1]-offer-theta[neighbour[i][3]][1])+cos(theta[i][0]+theta[neighbour[i][0]][1]-theta[neighbour[i][1]][0]-theta[i][1])+cos(theta[neighbour[i][3]][0]+theta[neighbour[neighbour[i][0]][3]][1]-theta[i][0]-theta[neighbour[i][3]][1])));
 					
-					rho = exp(beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,2,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1))+cos(plaqu(theta,neighbour,neighbour[i][5],0,2))));
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,2,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1))+cos(plaqu(theta,neighbour,neighbour[i][5],0,2))));
 					
 					//cout << beta*(cos(offer+theta[neighbour[i][0]][1]-theta[neighbour[i][1]][0]-theta[i][1])+cos(theta[neighbour[i][3]][0]+theta[neighbour[neighbour[i][0]][3]][1]-offer-theta[neighbour[i][3]][1]) - cos(theta[i][0]+theta[neighbour[i][0]][1]-theta[neighbour[i][1]][0]-theta[i][1])-cos(theta[neighbour[i][3]][0]+theta[neighbour[neighbour[i][0]][3]][1]-theta[i][0]-theta[neighbour[i][3]][1])) << endl;	
 				}
@@ -217,13 +241,13 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 				{
 					//rho = exp(beta*(-cos(theta[i][0]+theta[neighbour[i][0]][1]-theta[neighbour[i][1]][0]-offer)-cos(theta[neighbour[i][2]][0]+offer-theta[neighbour[neighbour[i][1]][2]][0]-theta[neighbour[i][2]][1])+cos(theta[i][0]+theta[neighbour[i][0]][1]-theta[neighbour[i][1]][0]-theta[i][1])+cos(theta[neighbour[i][2]][0]+theta[i][1]-theta[neighbour[neighbour[i][1]][2]][0]-theta[neighbour[i][2]][1])));
 				
-					rho = exp(beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][3],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,neighbour[i][3],0,1))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2))));
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][3],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,neighbour[i][3],0,1))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2))));
 					
 				}
 				
 				else
 				{
-					rho = exp(beta*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][3],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],1,2,offer,i,j))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,neighbour[i][3],0,2))+cos(plaqu(theta,neighbour,neighbour[i][4],1,2))));
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][3],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],1,2,offer,i,j))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,neighbour[i][3],0,2))+cos(plaqu(theta,neighbour,neighbour[i][4],1,2))));
 					
 				}
 			 	r = dist1(rng);
@@ -266,6 +290,39 @@ double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu)
 {
 	return (theta[i][mu] + theta[neighbour[i][mu]][nu] - theta[neighbour[i][nu]][mu] - theta[i][nu]);
 }
+
+double plaqured(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu)
+{
+	double plaquette = plaqu(theta,neighbour,i,mu,nu);
+	double n = 2*PI*int(plaqu(theta,neighbour,i,mu,nu)/(2*PI));
+	//cout << "plaquette initial: " << plaquette << " n: " << n << endl;
+	if(abs(plaquette-n)>PI)
+	{
+		//cout << "we are here" << endl;
+		if(plaquette<0)
+		{
+			//cout << "plaquette negative" << endl;
+			plaquette = plaquette - n + 2*PI;
+		}
+		else if(plaquette>0)
+		{
+			//cout << "plaquette positive" << endl;
+			plaquette = plaquette - n -2*PI;
+		}
+		return plaquette;
+	}
+	else
+	{
+		return (plaquette - n);
+	}
+	
+}
+/*
+double diracstring(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu)
+{
+	double plaquette = plaqu(theta,neighbour,i,)
+}
+*/
 double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu, double offer, int sitechange, int muchange)
 {
 	double changedplaqu;
@@ -277,4 +334,30 @@ double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int 
 	theta[sitechange][muchange] = save;
 	
 	return changedplaqu;
+}
+
+void calcmonopoledens(double theta[V][d], double M[nmeas], int neighbour[V][2*d], int count)
+{
+	M[count] = 0;
+	//int i = 15;
+	//double n;
+	
+	for(int i=0;i<V;i++)
+	{
+		//M[count] = M[count] + plaqu(theta,neighbour,i,0,1) + plaqu(theta,neighbour,i,2,0) + plaqu(theta,neighbour,i,1,2) + plaqu(theta,neighbour,neighbour[i][0],2,1) + plaqu(theta,neighbour,neighbour[i][1],0,2) + plaqu(theta,neighbour,neighbour[i][2],1,0);	
+		//M[count] = M[count] + abs(int(plaqu(theta,neighbour,i,0,1)/(2*PI)) + int(plaqu(theta,neighbour,i,2,0)/(2*PI)) + int(plaqu(theta,neighbour,i,1,2)/(2*PI)) + int(plaqu(theta,neighbour,neighbour[i][0],2,1)/(2*PI)) + int(plaqu(theta,neighbour,neighbour[i][1],0,2)/(2*PI)) + int(plaqu(theta,neighbour,neighbour[i][2],1,0)/(2*PI)));	
+		//n = int(plaqu(theta,neighbour,i,0,1)/(2*PI)) + int(plaqu(theta,neighbour,i,2,0)/(2*PI)) + int(plaqu(theta,neighbour,i,1,2)/(2*PI)) + int(plaqu(theta,neighbour,neighbour[i][0],2,1)/(2*PI)) + int(plaqu(theta,neighbour,neighbour[i][1],0,2)/(2*PI)) + int(plaqu(theta,neighbour,neighbour[i][2],1,0)/(2*PI));	
+		
+		//int(M[imeas]/(2*PI))
+		//M[count] = M[count] + plaqu(theta,neighbour,i,0,1)-2*PI*int(plaqu(theta,neighbour,i,0,1)/(2*PI)) + plaqu(theta,neighbour,i,2,0)-2*PI*int(plaqu(theta,neighbour,i,2,0)/(2*PI)) + plaqu(theta,neighbour,i,1,2)-2*PI*int(plaqu(theta,neighbour,i,1,2)/(2*PI)) + plaqu(theta,neighbour,neighbour[i][0],2,1)-2*PI*int(plaqu(theta,neighbour,neighbour[i][0],2,1)/(2*PI)) + plaqu(theta,neighbour,neighbour[i][1],0,2)-2*PI*int(plaqu(theta,neighbour,neighbour[i][1],0,2)/(2*PI)) + plaqu(theta,neighbour,neighbour[i][2],1,0)-2*PI*int(plaqu(theta,neighbour,neighbour[i][2],1,0)/(2*PI));	
+		//M[count] = plaqured(theta,neighbour,i,0,1);
+		M[count] = M[count] + abs(plaqured(theta,neighbour,i,0,1) + plaqured(theta,neighbour,i,2,0) + plaqured(theta,neighbour,i,1,2) + plaqured(theta,neighbour,neighbour[i][0],2,1) + plaqured(theta,neighbour,neighbour[i][1],0,2)+ plaqured(theta,neighbour,neighbour[i][2],1,0));	
+		//M[count] = M[count] + abs(plaqured(theta,neighbour,i,0,1) + plaqured(theta,neighbour,i,0,2) + plaqured(theta,neighbour,i,2,1) + plaqured(theta,neighbour,neighbour[i][0],2,1) + plaqured(theta,neighbour,neighbour[i][1],0,2)+ plaqured(theta,neighbour,neighbour[i][2],0,1));	
+		//M[count] = M[count] + abs(plaqured(theta,neighbour,i,0,1) + plaqured(theta,neighbour,i,0,2) + plaqured(theta,neighbour,i,1,2) + plaqured(theta,neighbour,neighbour[i][0],1,2) + plaqured(theta,neighbour,neighbour[i][1],0,2)+ plaqured(theta,neighbour,neighbour[i][2],0,1));	
+		//M[count] = M[count] + abs(plaqured(theta,neighbour,i,0,1) + plaqured(theta,neighbour,i,0,2) + plaqured(theta,neighbour,i,1,2) + plaqured(theta,neighbour,neighbour[i][0],1,2) + plaqured(theta,neighbour,neighbour[i][1],0,2)+ plaqured(theta,neighbour,neighbour[i][2],0,1));	
+
+	}
+	
+	//cout << M[count]/(2*PI)/2/V << endl;
+	M[count] = M[count]/(2*PI)/2/V;
 }
