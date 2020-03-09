@@ -17,11 +17,11 @@ const double PI = 2*acos(0.0);
 mt19937 rng( random_device{}() ); 
 
 const int d=4; //Dimension
-const int n=5; //length of the lattice
+const int n=6; //length of the lattice
 const int V=pow(n,d); //Number of lattice sites
 
 const int nequi=1000;
-const int nskip=500;
+const int nskip=100;
 const int nmeas=30;
 
 
@@ -35,28 +35,32 @@ double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int 
 complex<double> Ulink(double theta);
 complex<double> Ulinkplaqu(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu);
 complex<double> Ulinkplaqu2x2(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu);
+double plaqured(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu);
+void calcmonopoledens(double theta[V][d], double M[nmeas], int neighbour[V][2*d], int count);
 
 int main()
 {
 	
     rng.seed(time(NULL));
 	
-	double beta=0.5;
+	double beta=1.02;
 	int neighbour[V][2*d];
 	double theta[V][d];
 	double S[nmeas];
 	complex<double> W[nmeas];
+	double M[nmeas+1];
 	
 	
 	neibinit(neighbour);
-	filllinks(theta,3);
-	ofstream myfileaction;
-  	myfileaction.open ("Actionorder.txt");
-	ofstream myfileconfig;
-	myfileconfig.open("Configuration.txt");
-	ofstream myfilewilson;
-	myfilewilson.open("Wilsonloop1x1.txt");
-	 
+	filllinks(theta,1);
+	//ofstream myfileaction;
+  	//myfileaction.open ("Actionrandom.txt");
+	//ofstream myfileconfig;
+	//myfileconfig.open("Configuration.txt");
+	//ofstream myfilewilson;
+	//myfilewilson.open("Wilsonloop1x1.txt");
+	ofstream myfilemonopoledens;
+	myfilemonopoledens.open("monopoledensity4d.txt");
 	
 	
 	//calcaction(theta,S,neighbour,0);
@@ -64,7 +68,7 @@ int main()
 	//cout << "S start: " << S[0] << endl;
 //	myfileaction << S[0] << " \n";
 	
-while (beta<=1.5)
+while (beta>=0.99)
 {	
 	
 	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
@@ -72,10 +76,12 @@ while (beta<=1.5)
 	for(int imeas=0;imeas<nmeas;imeas++)
 	{
 		metropolisupdate(theta,beta,neighbour,nskip);
-		calcaction(theta,S,neighbour,imeas);
-		calcwilsonloop(theta,W,neighbour,imeas);
-		myfileaction << S[imeas] << " \n";
-		myfilewilson << real(W[imeas]) << " \n";
+		calcmonopoledens(theta,M,neighbour,imeas);
+		//calcaction(theta,S,neighbour,imeas);
+		//calcwilsonloop(theta,W,neighbour,imeas);
+		//myfileaction << S[imeas] << " \n";
+		//myfilewilson << real(W[imeas]) << " \n";
+		myfilemonopoledens << M[imeas] << " \n";
 		/*
 		for(int i=0;i<V;i++)
 		{
@@ -90,12 +96,12 @@ while (beta<=1.5)
 			
 	}
 	cout << beta << endl;
-	beta = beta + 0.025;
+	beta = beta - 0.0015;
 	
 }
-	myfileaction.close();
-	myfileconfig.close();
-	
+	//myfileaction.close();
+	//myfileconfig.close();
+	myfilemonopoledens.close();
 	
 	
 }
@@ -348,4 +354,47 @@ complex<double> Ulinkplaqu(double theta[V][d], int neighbour[V][2*d],int i, int 
 complex<double> Ulinkplaqu2x2(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu)
 {
 	return (Ulink(theta[i][mu])*Ulink(theta[neighbour[i][mu]][mu])*Ulink(theta[neighbour[neighbour[i][mu]][mu]][nu])*Ulink(theta[neighbour[neighbour[neighbour[i][mu]][mu]][nu]][nu])*Ulink(-theta[neighbour[neighbour[neighbour[i][mu]][nu]][nu]][mu])*Ulink(-theta[neighbour[neighbour[i][nu]][nu]][mu])*Ulink(-theta[neighbour[i][nu]][nu])*Ulink(-theta[i][nu]));
+}
+
+void calcmonopoledens(double theta[V][d], double M[nmeas], int neighbour[V][2*d], int count)
+{
+	M[count] = 0;
+	
+	
+	for(int i=0;i<V;i++)
+	{
+		
+		M[count] = M[count] + abs(plaqured(theta,neighbour,i,0,1) + plaqured(theta,neighbour,i,2,0) + plaqured(theta,neighbour,i,1,2) + plaqured(theta,neighbour,neighbour[i][0],2,1) + plaqured(theta,neighbour,neighbour[i][1],0,2)+ plaqured(theta,neighbour,neighbour[i][2],1,0));	
+		
+	}
+	
+	//cout << M[count]/(2*PI)/2/V << endl;
+	M[count] = M[count]/(2*PI)/2/V;
+}
+
+double plaqured(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu)
+{
+	double plaquette = plaqu(theta,neighbour,i,mu,nu);
+	double n = 2*PI*int(plaqu(theta,neighbour,i,mu,nu)/(2*PI));
+	//cout << "plaquette initial: " << plaquette << " n: " << n << endl;
+	if(abs(plaquette-n)>PI)
+	{
+		//cout << "we are here" << endl;
+		if(plaquette<0)
+		{
+			//cout << "plaquette negative" << endl;
+			plaquette = plaquette - n + 2*PI;
+		}
+		else if(plaquette>0)
+		{
+			//cout << "plaquette positive" << endl;
+			plaquette = plaquette - n -2*PI;
+		}
+		return plaquette;
+	}
+	else
+	{
+		return (plaquette - n);
+	}
+	
 }

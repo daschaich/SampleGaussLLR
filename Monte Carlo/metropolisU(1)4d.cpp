@@ -16,18 +16,19 @@ const double PI = 2*acos(0.0);
 mt19937 rng( random_device{}() ); 
 
 const int d=4; //Dimension
-const int n=13; //length of the lattice
+const int n=4; //length of the lattice
 const int V=pow(n,d); //Number of lattice sites
 
-const int nequi=10000;
-const int nskip=1;
-const int nmeas=1000;
+const int nequi=100;
+const int nskip=100;
+const int nmeas=10;
 
 
 void neibinit(int neighbour[V][2*d]);
 void filllinks(double theta[V][d],int start);
 void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int nsweeps);
 void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int count);
+void calcwilsonloop(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int count);
 double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu);
 double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu, double offer, int sitechange, int muchange);
 
@@ -36,10 +37,11 @@ int main()
 	
     rng.seed(time(NULL));
 	
-	double beta=0.9;
+	double beta=0.5;
 	int neighbour[V][2*d];
 	double theta[V][d];
-	double S[nmeas+1];
+	double S[nmeas];
+	double W[nmeas];
 	
 	
 	neibinit(neighbour);
@@ -48,19 +50,29 @@ int main()
   	myfileaction.open ("Actionrandom.txt");
 	ofstream myfileconfig;
 	myfileconfig.open("Configuration.txt");
-	//metropolisupdate(theta,beta,neighbour,nequi); //equilibration
-	
-	calcaction(theta,S,neighbour,0);
-	
-	cout << "S start: " << S[0] << endl;
-	myfileaction << S[0] << " \n";
+	ofstream myfilewilson;
+	myfilewilson.open("Wilsonloop.txt");
+	 
 	
 	
-	for(int imeas=1;imeas<=nmeas;imeas++)
+	//calcaction(theta,S,neighbour,0);
+	
+	//cout << "S start: " << S[0] << endl;
+//	myfileaction << S[0] << " \n";
+	
+while (beta<=1.5)
+{	
+	
+	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
+		
+	for(int imeas=0;imeas<nmeas;imeas++)
 	{
 		metropolisupdate(theta,beta,neighbour,nskip);
 		calcaction(theta,S,neighbour,imeas);
+		calcwilsonloop(theta,W,neighbour,imeas);
 		myfileaction << S[imeas] << " \n";
+		myfilewilson << W[imeas] << " \n";
+		/*
 		for(int i=0;i<V;i++)
 		{
 			for(int j=0;j<2;j++)
@@ -69,10 +81,14 @@ int main()
 			}
 			
 		}
-		cout << imeas << " " << S[imeas] << endl;
+		*/
+		//cout << imeas << " " << S[imeas] << endl;
 			
-	} 
+	}
+	cout << beta << endl;
+	beta = beta + 0.05;
 	
+}
 	myfileaction.close();
 	myfileconfig.close();
 	
@@ -215,26 +231,27 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 				if(j==0)
 				{
 					
-					rho = exp(beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],0,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,0,3))+cos(plaqu(theta,neighbour,neighbour[i][5],0,1))+cos(plaqu(theta,neighbour,neighbour[i][6],0,2))+cos(plaqu(theta,neighbour,neighbour[i][7],0,3))));
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],0,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,0,3))+cos(plaqu(theta,neighbour,neighbour[i][5],0,1))+cos(plaqu(theta,neighbour,neighbour[i][6],0,2))+cos(plaqu(theta,neighbour,neighbour[i][7],0,3))));
 					
 				}
+				
 				else if(j==1)
 				{
 					
-					rho = exp(beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],1,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,i,1,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1))+cos(plaqu(theta,neighbour,neighbour[i][6],1,2))+cos(plaqu(theta,neighbour,neighbour[i][7],1,3))));
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],1,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,i,1,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1))+cos(plaqu(theta,neighbour,neighbour[i][6],1,2))+cos(plaqu(theta,neighbour,neighbour[i][7],1,3))));
 					
 				}
 				
 				else if(j==2)
 				{
 					
-					rho = exp(beta*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],2,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,i,2,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,2))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2))+cos(plaqu(theta,neighbour,neighbour[i][7],2,3))));
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],2,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,i,2,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,2))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2))+cos(plaqu(theta,neighbour,neighbour[i][7],2,3))));
 					
 				}
 				
 				else
 				{
-					rho = exp(beta*(-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],2,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,3))+cos(plaqu(theta,neighbour,i,1,3))+cos(plaqu(theta,neighbour,i,2,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,3))+cos(plaqu(theta,neighbour,neighbour[i][5],1,3))+cos(plaqu(theta,neighbour,neighbour[i][6],2,3))));
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],2,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,3))+cos(plaqu(theta,neighbour,i,1,3))+cos(plaqu(theta,neighbour,i,2,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,3))+cos(plaqu(theta,neighbour,neighbour[i][5],1,3))+cos(plaqu(theta,neighbour,neighbour[i][6],2,3))));
 					
 				}
 			 	r = dist1(rng);
@@ -277,6 +294,7 @@ double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu)
 {
 	return (theta[i][mu] + theta[neighbour[i][mu]][nu] - theta[neighbour[i][nu]][mu] - theta[i][nu]);
 }
+
 double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu, double offer, int sitechange, int muchange)
 {
 	double changedplaqu;
@@ -288,4 +306,23 @@ double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int 
 	theta[sitechange][muchange] = save;
 	
 	return changedplaqu;
+}
+
+void calcwilsonloop(double theta[V][d], double W[nmeas], int neighbour[V][2*d], int count)
+{
+	W[count] = 0;
+	for(int i=0;i<V;i++)
+	{
+		for(int j=0;j<(d-1);j++)
+		{
+			for(int k=j+1;k<d;k++)
+			{
+				if(j<k)
+				{
+					W[count] = W[count] + abs(plaqu(theta,neighbour,i,j,k));
+				}
+			}
+		}
+	}
+	W[count] = W[count]/V;
 }
