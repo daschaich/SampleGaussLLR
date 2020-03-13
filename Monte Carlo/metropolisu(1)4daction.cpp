@@ -45,6 +45,7 @@ int main()
 	int neighbour[V][2*d];
 	double theta[V][d];
 	double S[nmeas];
+	double Sbin[nmeas];
 	complex<double> W[nmeas];
 	
 	
@@ -71,22 +72,32 @@ int main()
 		
 	for(int imeas=0;imeas<nmeas;imeas++)
 	{
-		metropolisupdate(theta,beta,neighbour,nskip);
-		calcaction(theta,S,neighbour,imeas);
-		calcwilsonloop(theta,W,neighbour,imeas);
-		myfileaction << S[imeas] << " \n";
-		myfilewilson << real(W[imeas]) << " \n";
-		/*
-		for(int i=0;i<V;i++)
+		Sbin[nmeas] = 0;
+		for(int iskip=0;iskip<nskip;iskip++)
 		{
-			for(int j=0;j<2;j++)
-			{
-				myfileconfig << theta[i][j] << " \n";
-			}
 			
+			metropolisupdate(theta,beta,neighbour,1);
+			calcaction(theta,S,neighbour,imeas);
+			Sbin[imeas] = Sbin[imeas] + S[imeas];
+			calcwilsonloop(theta,W,neighbour,imeas);
+			//myfileaction << S[imeas] << " \n";
+			myfilewilson << real(W[imeas]) << " \n";
+			/*
+			for(int i=0;i<V;i++)
+			{
+				for(int j=0;j<2;j++)
+				{
+					myfileconfig << theta[i][j] << " \n";
+				}
+			
+			}
+			*/
+			//cout << imeas << " " << S[imeas] << endl;
 		}
-		*/
-		//cout << imeas << " " << S[imeas] << endl;
+		Sbin[imeas] = Sbin[imeas]/nskip;
+		
+		myfileaction << Sbin[imeas] << " \n";
+		myfilewilson << real(W[imeas]) << " \n";
 			
 	}
 	cout << beta << endl;

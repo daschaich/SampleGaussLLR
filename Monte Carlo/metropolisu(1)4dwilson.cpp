@@ -46,16 +46,17 @@ int main()
 	double theta[V][d];
 	double S[nmeas];
 	complex<double> W[nmeas];
+	complex<double> Wbin[nmeas];
 	
 	
 	neibinit(neighbour);
 	filllinks(theta,3);
 	ofstream myfileaction;
-  	myfileaction.open ("Actionorder.txt");
+  	myfileaction.open ("Actionrandom.txt");
 	ofstream myfileconfig;
 	myfileconfig.open("Configuration.txt");
 	ofstream myfilewilson;
-	myfilewilson.open("Wilsonloop1x1.txt");
+	myfilewilson.open("Wilsonloop2x2order.txt");
 	 
 	
 	
@@ -71,6 +72,34 @@ while (beta<=1.5)
 		
 	for(int imeas=0;imeas<nmeas;imeas++)
 	{
+		Wbin[imeas] = 0.0;
+		for(int iskip=0;iskip<nskip;iskip++)
+		{
+			
+		
+			metropolisupdate(theta,beta,neighbour,1);
+			//calcaction(theta,S,neighbour,imeas);
+			calcwilsonloop(theta,W,neighbour,imeas);
+			Wbin[imeas] = Wbin[imeas] + W[imeas];
+			//myfileaction << S[imeas] << " \n";
+			//myfilewilson << W[imeas] << " \n";
+			/*
+			for(int i=0;i<V;i++)
+			{
+				for(int j=0;j<2;j++)
+				{
+					myfileconfig << theta[i][j] << " \n";
+				}
+			
+			}
+			*/
+			//cout << imeas << " " << S[imeas] << endl;
+		}
+		Wbin[imeas] = real(Wbin[imeas])/nskip;
+		myfilewilson << real(Wbin[imeas]) << " \n";
+		
+		
+		/*
 		metropolisupdate(theta,beta,neighbour,nskip);
 		calcaction(theta,S,neighbour,imeas);
 		calcwilsonloop(theta,W,neighbour,imeas);
@@ -325,7 +354,7 @@ void calcwilsonloop(double theta[V][d], complex<double> W[nmeas], int neighbour[
 				if(j<k)
 				{
 					
-					W[count] = W[count] + Ulinkplaqu(theta,neighbour,i,j,k);
+					W[count] = W[count] + Ulinkplaqu2x2(theta,neighbour,i,j,k);
 					
 				}
 			}

@@ -16,12 +16,12 @@ const double PI = 2*acos(0.0);
 mt19937 rng( random_device{}() ); 
 
 const int d=3; //Dimension
-const int n=6; //length of the lattice
+const int n=4; //length of the lattice
 const int V=pow(n,d); //Number of lattice sites
 
 const int nequi=500;
-const int nskip=500;
-const int nmeas=100;
+const int nskip=1;
+const int nmeas=10000;
 
 
 void neibinit(int neighbour[V][2*d]);
@@ -38,7 +38,7 @@ int main()
 	
     rng.seed(time(NULL));
 	
-	double beta=0.01;
+	double beta=1.0;
 	
 	int neighbour[V][2*d];
 	double theta[V][d];
@@ -49,12 +49,12 @@ int main()
 	neibinit(neighbour);
 	filllinks(theta,3);
 	ofstream myfileaction;
-  	myfileaction.open ("Actionrandom.txt");
+  	myfileaction.open ("Actionorder.txt");
 	ofstream myfileconfig;
 	myfileconfig.open("Configuration.txt");
 	ofstream myfilemonopoledens;
-	myfilemonopoledens.open("monopoledensityrandom.txt");
-	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
+	myfilemonopoledens.open("monopoledensityauto.txt");
+//	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
 	
 	//calcaction(theta,S,neighbour,0);
 	//calcmonopoledens(theta,M,neighbour,0);
@@ -62,7 +62,7 @@ int main()
 	//cout << "S start: " << S[0] << endl;
 	//myfileaction << S[0] << " \n";
 	
-while(beta<=2)
+//while(beta<=2)
 {
 	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
 		
@@ -94,7 +94,7 @@ while(beta<=2)
 		myfilemonopoledens << Mbin[imeas] << " \n";
 	}
 	 
-	beta = beta + 0.1;
+//	beta = beta + 0.1;
 	cout << beta << endl;
 
 }
