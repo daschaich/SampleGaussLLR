@@ -228,7 +228,7 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 	uniform_real_distribution<> dist1(0,1);
 	double offer; //new offered linkvar
 	double rho, r; //Probabilities for acceptance/rejection
-	
+	double diff, check;   // Energy differences
 	
 	for(int n=0;n<nsweeps;n++)
 	{
@@ -240,34 +240,72 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 				
 				if(j==0)
 				{
-					
-					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],0,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,0,3))+cos(plaqu(theta,neighbour,neighbour[i][5],0,1))+cos(plaqu(theta,neighbour,neighbour[i][6],0,2))+cos(plaqu(theta,neighbour,neighbour[i][7],0,3))));
-					
+					diff  = cos(plaqu(      theta, neighbour, i, 0, 1))
+                - cos(plaquchange(theta, neighbour, i, 0, 1, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, i, 0, 2))
+                - cos(plaquchange(theta, neighbour, i, 0, 2, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, i, 0, 3))
+                - cos(plaquchange(theta, neighbour, i, 0, 3, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][5], 0, 1))
+                - cos(plaquchange(theta, neighbour, neighbour[i][5], 0, 1, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][6], 0, 2))
+                - cos(plaquchange(theta, neighbour, neighbour[i][6], 0, 2, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][7], 0, 3))
+                - cos(plaquchange(theta, neighbour, neighbour[i][7], 0, 3, offer, i, j));
 				}
 				
 				else if(j==1)
 				{
-					
-					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],1,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,i,1,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1))+cos(plaqu(theta,neighbour,neighbour[i][6],1,2))+cos(plaqu(theta,neighbour,neighbour[i][7],1,3))));
-					
+					diff  = cos(plaqu(      theta, neighbour, i, 0, 1))
+                - cos(plaquchange(theta, neighbour, i, 0, 1, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, i, 1, 2))
+                - cos(plaquchange(theta, neighbour, i, 1, 2, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, i, 1, 3))
+                - cos(plaquchange(theta, neighbour, i, 1, 3, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][4], 0, 1))
+                - cos(plaquchange(theta, neighbour, neighbour[i][4], 0, 1, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][6], 1, 2))
+                - cos(plaquchange(theta, neighbour, neighbour[i][6], 1, 2, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][7], 1, 3))
+                - cos(plaquchange(theta, neighbour, neighbour[i][7], 1, 3, offer, i, j));
 				}
 				
 				else if(j==2)
 				{
-					
-					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],2,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,i,2,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,2))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2))+cos(plaqu(theta,neighbour,neighbour[i][7],2,3))));
+					diff  = cos(plaqu(      theta, neighbour, i, 0, 2))
+                - cos(plaquchange(theta, neighbour, i, 0, 2, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, i, 1, 2))
+                - cos(plaquchange(theta, neighbour, i, 1, 2, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, i, 2, 3))
+                - cos(plaquchange(theta, neighbour, i, 2, 3, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][4], 0, 2))
+                - cos(plaquchange(theta, neighbour, neighbour[i][4], 0, 2, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][5], 1, 2))
+                - cos(plaquchange(theta, neighbour, neighbour[i][5], 1, 2, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][7], 2, 3))
+                - cos(plaquchange(theta, neighbour, neighbour[i][7], 2, 3, offer, i, j));
 					
 				}
 				
 				else
 				{
-					
-					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],2,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,3))+cos(plaqu(theta,neighbour,i,1,3))+cos(plaqu(theta,neighbour,i,2,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,3))+cos(plaqu(theta,neighbour,neighbour[i][5],1,3))+cos(plaqu(theta,neighbour,neighbour[i][6],2,3))));
+					diff  = cos(plaqu(      theta, neighbour, i, 0, 3))
+                - cos(plaquchange(theta, neighbour, i, 0, 3, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, i, 1, 3))
+                - cos(plaquchange(theta, neighbour, i, 1, 3, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, i, 2, 3))
+                - cos(plaquchange(theta, neighbour, i, 2, 3, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][4], 0, 3))
+                - cos(plaquchange(theta, neighbour, neighbour[i][4], 0, 3, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][5], 1, 3))
+                - cos(plaquchange(theta, neighbour, neighbour[i][5], 1, 3, offer, i, j));
+          diff += cos(plaqu(      theta, neighbour, neighbour[i][6], 2, 3))
+                - cos(plaquchange(theta, neighbour, neighbour[i][6], 2, 3, offer, i, j));
 					
 				}
 				
 			 	r = dist1(rng);
-			 
+			 	rho = exp(-beta * diff);
 			 	if(r<=rho)
 			 	{
 			 		
