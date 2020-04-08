@@ -1,16 +1,22 @@
+# Quotation marks in shell commands below needed to handle "(" and ")"
 CC = g++
 CFLAGS = -O3 -Wall -std=c++11
-INCLUDE_FLAGS =
 LIBRARY_FLAGS = -lm
-EXECUTABLE = U1_ora
+EXECUTABLES = 3d_U1_ora 4d_U1_mono
 
-OBJECT_FILES = "metropolisu(1)overrelax.o"
-
-main: metropolisu(1)overrelax.o
-	$(CC) $(CFLAGS) $(INCLUDE_FLAGS) $(LIBRARY_FLAGS) -o $(EXECUTABLE) $(OBJECT_FILES)
+main: $(EXECUTABLES)
 
 clean:
-	rm -f $(EXECUTABLE) *.o
+	rm -f $(EXECUTABLES) *.o
 
-metropolisu(1)overrelax.o: metropolisu(1)overrelax.cpp
-	$(CC) $(CFLAGS) $(INCLUDE_FLAGS) -c "metropolisu(1)overrelax.cpp"
+3d_U1_ora: metropolisu(1)overrelax.o
+	$(CC) $(CFLAGS) $(LIBRARY_FLAGS) -o 3d_U1_ora "metropolisu(1)overrelax.o"
+
+metropolisu(1)overrelax.o:
+	$(CC) $(CFLAGS) -c "metropolisu(1)overrelax.cpp"
+
+4d_U1_mono: metropolisU(1)4dmonopoletest.o
+	$(CC) $(CFLAGS) $(LIBRARY_FLAGS) -o 4d_U1_mono "metropolisU(1)4dmonopoletest.o"
+
+metropolisU(1)4dmonopoletest.o:
+	$(CC) $(CFLAGS) -c "metropolisU(1)4dmonopoletest.cpp"

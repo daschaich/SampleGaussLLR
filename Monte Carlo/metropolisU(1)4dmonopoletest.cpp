@@ -41,7 +41,8 @@ void calcmonopoledens(double theta[V][d], double M[nmeas], int neighbour[V][2*d]
 int main()
 {
 	
-    rng.seed(time(NULL));
+//    rng.seed(time(NULL));
+    rng.seed(1296.0);
 	
 	double beta=1.02;
 	int neighbour[V][2*d];
@@ -68,7 +69,7 @@ int main()
 	//cout << "S start: " << S[0] << endl;
 //	myfileaction << S[0] << " \n";
 	
-while (beta>=0.99)
+while (beta>=1.02)
 {	
 	
 	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
