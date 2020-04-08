@@ -28,7 +28,7 @@ const int nmeas=30;
 void neibinit(int neighbour[V][2*d]);
 void filllinks(double theta[V][d],int start);
 void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int nsweeps);
-void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int count);
+double calcaction(double theta[V][d], int neighbour[V][2*d]);
 void calcwilsonloop(double theta[V][d], complex<double> W[nmeas], int neighbour[V][2*d], int count);
 double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu);
 double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu, double offer, int sitechange, int muchange);
@@ -47,8 +47,8 @@ int main()
 	double beta=1.02;
 	int neighbour[V][2*d];
 	double theta[V][d];
-	double S[nmeas];
-	complex<double> W[nmeas];
+	//double S[nmeas];
+	//complex<double> W[nmeas];
 	double M[nmeas+1];
 	
 	
@@ -78,7 +78,9 @@ while (beta>=1.02)
 	{
 		metropolisupdate(theta,beta,neighbour,nskip);
 		calcmonopoledens(theta,M,neighbour,imeas);
-		//calcaction(theta,S,neighbour,imeas);
+    // Monitor normalized action...
+//		S[imeas] = calcaction(theta,neighbour);    // Print action in routine
+//    cout << "S/6V: " << S[imeas] * beta / (6.0 * (double)V) << endl;
 		//calcwilsonloop(theta,W,neighbour,imeas);
 		//myfileaction << S[imeas] << " \n";
 		//myfilewilson << real(W[imeas]) << " \n";
@@ -229,9 +231,13 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 	double offer; //new offered linkvar
 	double rho, r; //Probabilities for acceptance/rejection
 	double diff, check;   // Energy differences
+  double sav;
+  int good, bad;
 	
 	for(int n=0;n<nsweeps;n++)
 	{
+    good = 0;
+    bad = 0;
 		for(int i=0;i<V;i++)
 		{
 			for(int j=0;j<d;j++)
@@ -303,7 +309,25 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
                 - cos(plaquchange(theta, neighbour, neighbour[i][6], 2, 3, offer, i, j));
 					
 				}
-				
+
+        // We should get the same diff from un-normalized calcaction()...
+        sav = theta[i][j];
+        theta[i][j] = offer;
+        check = calcaction(theta, neighbour);   // After  proposed change
+        theta[i][j] = sav;
+        check -= calcaction(theta, neighbour);  // Before proposed change
+
+        // Okay, the sign is opposite what I expect...
+        // But ignore that for now since we have bigger fish to fry:
+        check *= -1.0;
+        if (fabs(check - diff) > 1e-8) {
+          cout << "j = " << j << " at i = " << i << "... ";
+          cout << "diff = " << diff << ", check = " << check << endl;
+          bad++;
+        }
+        else
+          good++;
+
 			 	r = dist1(rng);
 			 	rho = exp(-beta * diff);
 			 	if(r<=rho)
@@ -316,13 +340,14 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 			}
 			
 		}
+	  cout << good << " are okay, " << bad << " are problematic..." << endl;
 	}
-	
 }
 
-void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int count)
+// Now returning total action without factor of beta or volume normalization
+double calcaction(double theta[V][d], int neighbour[V][2*d])
 {
-	S[count] = 0;
+	double S = 0;
 	for(int i = 0;i<V;i++)
 	{
 		for(int j=0;j<(d-1);j++)
@@ -331,13 +356,12 @@ void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int 
 			{
 				if(j<k)
 				{
-					S[count] = S[count] + cos(plaqu(theta,neighbour,i,j,k));
+					S = S + cos(plaqu(theta,neighbour,i,j,k));
 				}
 			}
 		}
-		
 	}
-	S[count] = S[count]/double(V);
+	return S;
 }
 
 double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu)
