@@ -20,14 +20,17 @@ const int d=4; //Dimension
 const int n=6; //length of the lattice
 const int V=pow(n,d); //Number of lattice sites
 
-const int nequi=1000;
-const int nskip=100;
+//const int nequi=1000;
+const int nequi=500;
+//const int nskip=100;
+const int nskip=50;
 const int nmeas=30;
 
 
 void neibinit(int neighbour[V][2*d]);
 void filllinks(double theta[V][d],int start);
 void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int nsweeps);
+void heatbathupdate(double theta[V][d], double beta, int neighbour[V][2*d], int nsweeps);
 void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int count);
 void calcwilsonloop(double theta[V][d], complex<double> W[nmeas], int neighbour[V][2*d], int count);
 double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu);
@@ -37,6 +40,8 @@ complex<double> Ulinkplaqu(double theta[V][d], int neighbour[V][2*d],int i, int 
 complex<double> Ulinkplaqu2x2(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu);
 double plaqured(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu);
 void calcmonopoledens(double theta[V][d], double M[nmeas], int neighbour[V][2*d], int count);
+double staple(double theta[V][d], int neighbour[V][2*d], int i, int j);
+double staple3(double theta[V][d], int neighbour[V][2*d], int i, int j);
 
 int main()
 {
@@ -60,7 +65,7 @@ int main()
 	//ofstream myfilewilson;
 	//myfilewilson.open("Wilsonloop1x1.txt");
 	ofstream myfilemonopoledens;
-	myfilemonopoledens.open("monopoledensity4d.txt");
+	myfilemonopoledens.open("monopoledensity4dl6heat.txt");
 	
 	int epsilon[5][5][5][5];
 	
@@ -111,11 +116,12 @@ int main()
 while (beta>=0.99)
 {	
 	
-	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
-		
+	//metropolisupdate(theta,beta,neighbour,nequi); //equilibration
+	heatbathupdate(theta,beta,neighbour,nequi);	
 	for(int imeas=0;imeas<nmeas;imeas++)
 	{
-		metropolisupdate(theta,beta,neighbour,nskip);
+		//metropolisupdate(theta,beta,neighbour,nskip);
+		heatbathupdate(theta,beta,neighbour,nskip);
 		calcmonopoledens(theta,M,neighbour,imeas);
 		//calcaction(theta,S,neighbour,imeas);
 		//calcwilsonloop(theta,W,neighbour,imeas);
@@ -321,6 +327,51 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 	
 }
 
+
+void heatbathupdate(double theta[V][d], double beta, int neighbour[V][2*d], int nsweeps)
+{
+	
+	uniform_real_distribution<> dist(-PI, PI);
+	//uniform_real_distribution<> dist(0, 2*PI);
+	uniform_real_distribution<> dist1(0,1);
+	
+	double offer;
+	double r;
+	double weight;
+	
+	for(int n=0;n<nsweeps;n++)
+	{
+		for(int i=0;i<V;i++)
+		{
+			for(int j=0;j<d;j++)
+			{
+				for(int works=0;works<1;works++)
+				{
+					double S = staple3(theta,neighbour,i,j);
+					offer = dist(rng);
+					r= dist1(rng);
+					weight = exp(beta*staple3(theta,neighbour,i,j)*(cos(offer)-1.0));
+					if(r<weight)
+					{
+						theta[i][j]= offer - staple(theta,neighbour,i,j);
+					}
+					else
+					{
+						works = works-1;
+					}
+				}
+				
+				
+				
+				
+			}
+		}
+	}
+}
+
+
+
+
 void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int count)
 {
 	S[count] = 0;
@@ -524,6 +575,7 @@ void calcmonopoledens(double theta[V][d], double M[nmeas], int neighbour[V][2*d]
 		for(int i=0;i<V;i++)
 		{
 			charge[a-1][i] = charge[a-1][i]*0.5;
+			//cout << charge[a-1][i]  <<endl;
 		}
 	}
 	
@@ -555,7 +607,7 @@ void calcmonopoledens(double theta[V][d], double M[nmeas], int neighbour[V][2*d]
 		total += total_mono_p[dir] - total_mono_m[dir];
 	}
 	
-	M[count] = total/V;
+	M[count] = total/V/2;
 	
 	
 	
@@ -671,5 +723,42 @@ double plaqured(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu
 	{
 		return (plaquette - n);
 	}
+	
+}
+
+
+
+double staple(double theta[V][d], int neighbour[V][2*d], int i, int j)
+{
+	complex<double> A = 0.0;
+	
+	for(int nu=0;nu<d;nu++)
+	{
+		if(j!=nu)
+		{
+				A = A + polar(1.0,theta[neighbour[i][j]][nu])*polar(1.0,-theta[neighbour[i][nu]][j])*polar(1.0,-theta[i][nu])+polar(1.0,-theta[neighbour[neighbour[i][nu+d]][j]][nu])*polar(1.0,-theta[neighbour[i][nu+d]][j])*polar(1.0,theta[neighbour[i][nu+d]][nu]);
+				//A = A + polar(1.0,theta[i][nu])*polar(1.0,theta[neighbour[i][nu]][j])*polar(1.0,-theta[neighbour[i][j]][nu])+polar(1.0,-theta[neighbour[i][nu+d]][nu])*polar(1.0,theta[neighbour[i][nu+d]][j])*polar(1.0,theta[neighbour[neighbour[i][nu+d]][j]][nu]);
+		}
+	}
+	
+	return arg(A);
+	
+}
+
+
+double staple3(double theta[V][d], int neighbour[V][2*d], int i, int j)
+{
+	complex<double> A = 0.0;
+	
+	for(int nu=0;nu<d;nu++)
+	{
+		if(j!=nu)
+		{
+				A = A + polar(1.0,theta[neighbour[i][j]][nu])*polar(1.0,-theta[neighbour[i][nu]][j])*polar(1.0,-theta[i][nu])+polar(1.0,-theta[neighbour[neighbour[i][nu+d]][j]][nu])*polar(1.0,-theta[neighbour[i][nu+d]][j])*polar(1.0,theta[neighbour[i][nu+d]][nu]);
+				//A = A + polar(1.0,theta[i][nu])*polar(1.0,theta[neighbour[i][nu]][j])*polar(1.0,-theta[neighbour[i][j]][nu])+polar(1.0,-theta[neighbour[i][nu+d]][nu])*polar(1.0,theta[neighbour[i][nu+d]][j])*polar(1.0,theta[neighbour[neighbour[i][nu+d]][j]][nu]);
+		}
+	}
+	
+	return abs(A);
 	
 }
