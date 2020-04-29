@@ -46,14 +46,13 @@ double staple3(double theta[V][d], int neighbour[V][2*d], int i, int j);
 int main()
 {
 	
-//    rng.seed(time(NULL));
-    rng.seed(1296.0);
+    rng.seed(time(NULL));
 	
 	double beta=1.02;
 	int neighbour[V][2*d];
 	double theta[V][d];
-	//double S[nmeas];
-	//complex<double> W[nmeas];
+	double S[nmeas];
+	complex<double> W[nmeas];
 	double M[nmeas+1];
 	
 	
@@ -114,7 +113,7 @@ int main()
 	//cout << "S start: " << S[0] << endl;
 //	myfileaction << S[0] << " \n";
 	
-while (beta>=1.02)
+while (beta>=0.99)
 {	
 	
 	//metropolisupdate(theta,beta,neighbour,nequi); //equilibration
@@ -124,9 +123,7 @@ while (beta>=1.02)
 		//metropolisupdate(theta,beta,neighbour,nskip);
 		heatbathupdate(theta,beta,neighbour,nskip);
 		calcmonopoledens(theta,M,neighbour,imeas);
-    // Monitor normalized action...
-//		S[imeas] = calcaction(theta,neighbour);    // Print action in routine
-//    cout << "S/6V: " << S[imeas] * beta / (6.0 * (double)V) << endl;
+		//calcaction(theta,S,neighbour,imeas);
 		//calcwilsonloop(theta,W,neighbour,imeas);
 		//myfileaction << S[imeas] << " \n";
 		//myfilewilson << real(W[imeas]) << " \n";
@@ -276,14 +273,10 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 	uniform_real_distribution<> dist1(0,1);
 	double offer; //new offered linkvar
 	double rho, r; //Probabilities for acceptance/rejection
-	double diff, check;   // Energy differences
-  double sav;
-  int good, bad;
+	
 	
 	for(int n=0;n<nsweeps;n++)
 	{
-    good = 0;
-    bad = 0;
 		for(int i=0;i<V;i++)
 		{
 			for(int j=0;j<d;j++)
@@ -292,90 +285,34 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 				
 				if(j==0)
 				{
-					diff  = cos(plaqu(      theta, neighbour, i, 0, 1))
-                - cos(plaquchange(theta, neighbour, i, 0, 1, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, i, 0, 2))
-                - cos(plaquchange(theta, neighbour, i, 0, 2, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, i, 0, 3))
-                - cos(plaquchange(theta, neighbour, i, 0, 3, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][5], 0, 1))
-                - cos(plaquchange(theta, neighbour, neighbour[i][5], 0, 1, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][6], 0, 2))
-                - cos(plaquchange(theta, neighbour, neighbour[i][6], 0, 2, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][7], 0, 3))
-                - cos(plaquchange(theta, neighbour, neighbour[i][7], 0, 3, offer, i, j));
+					
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],0,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,0,3))+cos(plaqu(theta,neighbour,neighbour[i][5],0,1))+cos(plaqu(theta,neighbour,neighbour[i][6],0,2))+cos(plaqu(theta,neighbour,neighbour[i][7],0,3))));
+					
 				}
 				
 				else if(j==1)
 				{
-					diff  = cos(plaqu(      theta, neighbour, i, 0, 1))
-                - cos(plaquchange(theta, neighbour, i, 0, 1, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, i, 1, 2))
-                - cos(plaquchange(theta, neighbour, i, 1, 2, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, i, 1, 3))
-                - cos(plaquchange(theta, neighbour, i, 1, 3, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][4], 0, 1))
-                - cos(plaquchange(theta, neighbour, neighbour[i][4], 0, 1, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][6], 1, 2))
-                - cos(plaquchange(theta, neighbour, neighbour[i][6], 1, 2, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][7], 1, 3))
-                - cos(plaquchange(theta, neighbour, neighbour[i][7], 1, 3, offer, i, j));
+					
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],1,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,1))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,i,1,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1))+cos(plaqu(theta,neighbour,neighbour[i][6],1,2))+cos(plaqu(theta,neighbour,neighbour[i][7],1,3))));
+					
 				}
 				
 				else if(j==2)
 				{
-					diff  = cos(plaqu(      theta, neighbour, i, 0, 2))
-                - cos(plaquchange(theta, neighbour, i, 0, 2, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, i, 1, 2))
-                - cos(plaquchange(theta, neighbour, i, 1, 2, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, i, 2, 3))
-                - cos(plaquchange(theta, neighbour, i, 2, 3, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][4], 0, 2))
-                - cos(plaquchange(theta, neighbour, neighbour[i][4], 0, 2, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][5], 1, 2))
-                - cos(plaquchange(theta, neighbour, neighbour[i][5], 1, 2, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][7], 2, 3))
-                - cos(plaquchange(theta, neighbour, neighbour[i][7], 2, 3, offer, i, j));
+					
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][7],2,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,2))+cos(plaqu(theta,neighbour,i,1,2))+cos(plaqu(theta,neighbour,i,2,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,2))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2))+cos(plaqu(theta,neighbour,neighbour[i][7],2,3))));
 					
 				}
 				
 				else
 				{
-					diff  = cos(plaqu(      theta, neighbour, i, 0, 3))
-                - cos(plaquchange(theta, neighbour, i, 0, 3, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, i, 1, 3))
-                - cos(plaquchange(theta, neighbour, i, 1, 3, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, i, 2, 3))
-                - cos(plaquchange(theta, neighbour, i, 2, 3, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][4], 0, 3))
-                - cos(plaquchange(theta, neighbour, neighbour[i][4], 0, 3, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][5], 1, 3))
-                - cos(plaquchange(theta, neighbour, neighbour[i][5], 1, 3, offer, i, j));
-          diff += cos(plaqu(      theta, neighbour, neighbour[i][6], 2, 3))
-                - cos(plaquchange(theta, neighbour, neighbour[i][6], 2, 3, offer, i, j));
+					
+					rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,3,offer,i,j))-cos(plaquchange(theta,neighbour,neighbour[i][6],2,3,offer,i,j))+cos(plaqu(theta,neighbour,i,0,3))+cos(plaqu(theta,neighbour,i,1,3))+cos(plaqu(theta,neighbour,i,2,3))+cos(plaqu(theta,neighbour,neighbour[i][4],0,3))+cos(plaqu(theta,neighbour,neighbour[i][5],1,3))+cos(plaqu(theta,neighbour,neighbour[i][6],2,3))));
 					
 				}
-
-        // We should get the same diff from un-normalized calcaction()...
-        sav = theta[i][j];
-        theta[i][j] = offer;
-        check = calcaction(theta, neighbour);   // After  proposed change
-        theta[i][j] = sav;
-        check -= calcaction(theta, neighbour);  // Before proposed change
-
-        // Okay, the sign is opposite what I expect...
-        // But ignore that for now since we have bigger fish to fry:
-        check *= -1.0;
-        if (fabs(check - diff) > 1e-8) {
-          cout << "j = " << j << " at i = " << i << "... ";
-          cout << "diff = " << diff << ", check = " << check << endl;
-          bad++;
-        }
-        else
-          good++;
-
+				
 			 	r = dist1(rng);
-			 	rho = exp(-beta * diff);
+			 
 			 	if(r<=rho)
 			 	{
 			 		
@@ -386,9 +323,10 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 			}
 			
 		}
-	  cout << good << " are okay, " << bad << " are problematic..." << endl;
 	}
+	
 }
+
 
 void heatbathupdate(double theta[V][d], double beta, int neighbour[V][2*d], int nsweeps)
 {
@@ -436,7 +374,7 @@ void heatbathupdate(double theta[V][d], double beta, int neighbour[V][2*d], int 
 
 void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int count)
 {
-	double S = 0;
+	S[count] = 0;
 	for(int i = 0;i<V;i++)
 	{
 		for(int j=0;j<(d-1);j++)
@@ -445,12 +383,13 @@ void calcaction(double theta[V][d], double S[nmeas], int neighbour[V][2*d], int 
 			{
 				if(j<k)
 				{
-					S = S + cos(plaqu(theta,neighbour,i,j,k));
+					S[count] = S[count] + cos(plaqu(theta,neighbour,i,j,k));
 				}
 			}
 		}
+		
 	}
-	return S;
+	S[count] = S[count]/double(V);
 }
 
 double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu)

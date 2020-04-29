@@ -61,19 +61,12 @@ int main()
 	calcaction(theta,S,neighbour,0);
 	cout << S[0] << endl;
 	//cout << staple(theta,neighbour,3,0) << endl;
-//	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
-//	calcaction(theta,S,neighbour,1);
-//	cout << S[1] << endl;
-  for (int traj = 0; traj < nequi; traj++) {
-    metropolisupdate(theta,beta,neighbour,1);
-    calcaction(theta,S,neighbour,1);
-    cout << S[1] << endl;
-  }
-  for (int traj = 0; traj < nequi; traj++) {
-    overrelaxupdate(theta,beta,neighbour,1);
-    calcaction(theta,S,neighbour,2);
-    cout << S[2] << endl;
-  }
+	metropolisupdate(theta,beta,neighbour,nequi); //equilibration
+	calcaction(theta,S,neighbour,1);
+	cout << S[1] << endl;
+	overrelaxupdate(theta,beta,neighbour,1);
+	calcaction(theta,S,neighbour,2);
+	cout << S[2] << endl;
 	
 	
 /*
@@ -304,17 +297,22 @@ void metropolisupdate(double theta[V][d],double beta, int neighbour[V][2*d], int
 
 
 
-void overrelaxupdate(double theta[V][d],double beta, int neighbour[V][2*d], int nsweeps) {
-  for(int n=0;n<nsweeps;n++) {
-    for(int i=0;i<V;i+=2) {
-      for(int j=0;j<3;j++)
-        theta[i][j]= 2*PI-2*staple(theta,neighbour,i,j)-theta[i][j];
-    }
-    for(int i=1;i<V;i+=2) {
-      for(int j=0;j<3;j++)
-        theta[i][j]= 2*PI-2*staple(theta,neighbour,i,j)-theta[i][j];
-    }
-  }
+void overrelaxupdate(double theta[V][d],double beta, int neighbour[V][2*d], int nsweeps)
+{
+	
+	for(int n=0;n<nsweeps;n++)
+	{
+		for(int i=0;i<V;i++)
+		{
+			for(int j=0;j<3;j++)
+			{
+				theta[i][j]= 2*PI-2*staple(theta,neighbour,i,j)-theta[i][j];
+			
+			}
+			
+		}
+	}
+		
 }
 
 void overrelaxupdate2(double theta[V][d],double beta, int neighbour[V][2*d], int nsweeps)
@@ -448,7 +446,7 @@ double staple(double theta[V][d], int neighbour[V][2*d], int i, int j)
 				//A = A + polar(1.0,theta[i][nu])*polar(1.0,theta[neighbour[i][nu]][j])*polar(1.0,-theta[neighbour[i][j]][nu])+polar(1.0,-theta[neighbour[i][nu+d]][nu])*polar(1.0,theta[neighbour[i][nu+d]][j])*polar(1.0,theta[neighbour[neighbour[i][nu+d]][j]][nu]);
 		}
 	}
-	cout << "abs(A) = " << abs(A) << endl;
+	
 	return arg(A);
 	
 }
