@@ -18,35 +18,33 @@ const double PI = 2*acos(0.0);
 
 mt19937 rng( random_device{}() ); 
 
+const double beta=1.006;
 
 const int d=3; //Dimension
 const int n=6; //length of the lattice
 const int V=pow(n,d); //Number of lattice sites
 
-const int N_TH=100;
-const int nskip=1;
-const int N_SW=50;
+const int N_TH=100; //Thermalization steps
+const int nskip=10; //skip steps
+const int N_SW=100; //number of sweeps
 
 
-const double Emin = 0.4*3;
-const double Emax = 0.6*3;
-const double delta =1.0;
+const double Emin = 0.4*3; //minimum energy that is probed
+const double Emax = 0.6*3; //maximum energy that is probed
+const double delta =0.1*3; //size of energy interval
 
 
-void neibinit(int neighbour[V][2*d]);
-void filllinks(double theta[V][d],int start);
-void metropolisupdate(double theta[V][d],double a,double beta, int neighbour[V][2*d], int nsweeps);
-void metropolisupdateconst(double theta[V][d],double a,double beta, int neighbour[V][2*d], int nsweeps,double E,double delta);
-//void heatbathupdate(double theta[V][d], double beta, int neighbour[V][2*d], int nsweeps);
+void neibinit(int neighbour[V][2*d]); //initiates the neighbour field
+void filllinks(double theta[V][d],int start); // fills the links of the lattice
+void metropolisupdate(double theta[V][d],double a,double beta, int neighbour[V][2*d], int nsweeps); //metropolisupdate unrestricted
+void metropolisupdateconst(double theta[V][d],double a,double beta, int neighbour[V][2*d], int nsweeps,double E,double delta); //metropolisupdate within a certain energy interval
+//void heatbathupdate(double theta[V][d], double beta, int neighbour[V][2*d], int nsweeps); 
+void findEint(double theta[V][d],int neighbour[V][2*d], double beta, double Eint, double delta);
 double calcaction(double theta[V][d], int neighbour[V][2*d],double beta);
-double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu);
-double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu, double offer, int sitechange, int muchange);
+double plaqu(double theta[V][d], int neighbour[V][2*d], int i, int mu, int nu); //calculates the plaquette
+double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int nu, double offer, int sitechange, int muchange); //calculates the plaquette with the proposed changed link
 
 
-
-
-float my_erfinvf (float a);
-float my_logf (float a);
 
 random_device rd;
 mt19937 gen(rd());
@@ -55,7 +53,7 @@ uniform_real_distribution<> dis(0, 1);
 
 int main()
 {
-	double epsilon = 0.00001;
+	double epsilon = 0.00001; // precision of rob march algorithm
 	
 	
 	
@@ -64,29 +62,30 @@ int main()
 	int neighbour[V][2*d];
 	neibinit(neighbour);
 	double theta[V][d];
-	double S[N_SW];
+	double S[N_SW]; //Action
 	bool Einterval = false;
 	
-	double beta=1.0;
+	
 	
 	
 	
 
-	int Njacknife = 20;
-	int Naverage = 10000;
+	int Njacknife = 1;
+	//int Naverage = 10000;
 	
-	double x0[int(Emax/delta)];
-	double a[int(Emax/delta)];
-	double a_i[Njacknife];
+	double x0[int(Emax/delta)];  //lower end of energy interval
+	double a[int(Emax/delta)]; 
+	double a_i[Njacknife]; 
 	double a_i_new;
-	int RobMarchcount;
-	double Reweightexpect;
-	double y1;
-	double y2;
-	double y;
-	double x;
-	double s2[int(Emax/delta)];
+	int RobMarchcount; //number of iteration of the rob march algorithm
+	double Reweightexpect; //Reweighted expectationvalue of the energy
+	//double y1; 
+	//double y2;
+	//double y;
+	//double x;
+	double s2[int(Emax/delta)]; //variance
 	double a_i_del[Njacknife];
+	//stuff for calculation of density from a
 	double A[int(Emax/delta)][Njacknife];
 	double Astar;
 	double var[int(Emax/delta)];
@@ -100,21 +99,21 @@ int main()
 	myfilemonopoledens.open("rhovalues.txt");
 	
 	//int Eint = 0;
-	for(int Eint=0;Eint<(Emax/delta);Eint++)
+	for(int Eint=0;Eint<((Emax-Emin)/delta);Eint++) //scans through the energy intervals
 	{
 		x0[Eint] = Eint*delta+Emin;
 		
-		a[Eint] = 0.0;
+		a[Eint] = -1;
 		
 		//int jcount =0;
-		for(int jcount = 0;jcount<Njacknife;jcount++)
+		for(int jcount = 0;jcount<Njacknife;jcount++) //generates Njacknife values of a for Jacknife method to get error and average
 		{
-			
+			//set starting value for a
 			if(Eint == 0)
 			{
-				a_i[jcount] = 1+2*epsilon;
+				a_i[jcount] = -1+2*epsilon;
 				
-				a_i_new = 1;
+				a_i_new = -1;
 			}
 			else
 			{
@@ -127,49 +126,55 @@ int main()
 			
 			Reweightexpect  = 10.0*epsilon;
 			
-			while(abs(a_i_new-a_i[jcount]) > epsilon)
+			filllinks(theta,2);
+			Einterval=false;
+			
+			while(abs(a_i_new-a_i[jcount]) > epsilon) //only stop rob march if a doesnt change much anymore
 			{
 				
+				cout << "difference " << a_i_new-a_i[jcount] << endl;
 				
 				a_i[jcount] = a_i_new;
 				
 				
-				filllinks(theta,3);
+				
 				
 				
 				//cout << Einterval << endl;
+				
+				//finds the right energy intervall starting from the maximum energy (all link variables set to 0)
 				if(Einterval == false)
 				{
 				
 					while(Einterval==false)
 					{	
-					
-						metropolisupdate(theta,a_i[jcount],beta,neighbour,1);
+						//cout << "here Einterval false " << calcaction(theta,neighbour,beta)/3 << endl;
+						metropolisupdate(theta,1.0,beta,neighbour,1);
 						if(calcaction(theta,neighbour,beta)<=(x0[Eint]+delta) && calcaction(theta,neighbour,beta)>=x0[Eint])
 						{
 							Einterval=true;
-							cout << "found Energy interval  " << calcaction(theta,neighbour,beta) <<  endl;
+							cout << "found Energy interval  " << calcaction(theta,neighbour,beta)/3 <<  endl;
 						}
 					}
 				}
 				
 				
-				cout << a_i[jcount] << endl;
-				
+				cout << "a " << a_i[jcount] << endl;
+				/*
 				if(RobMarchcount == 1)
 				{
 					metropolisupdate(theta,a_i[jcount],beta,neighbour,N_TH);
 				}
+				*/
+				//restricted metropolis updates once the right energy interval is found
+				//else
 				
-				else
-				{
-					metropolisupdateconst(theta,a_i[jcount],beta,neighbour,N_TH,x0[Eint],delta);
-				}
+				metropolisupdateconst(theta,a_i[jcount],beta,neighbour,N_TH,x0[Eint],delta);
 				
 				
 				
-				cout << "here " <<  RobMarchcount << " Energy " <<  calcaction(theta,neighbour,beta) << endl;
 				
+				cout << "RobMarchcount " <<  RobMarchcount << " Energy " <<  calcaction(theta,neighbour,beta)/3 << endl;
 				
 				//y1 = 0.5*(erf(8*a_i[jcount]+x0[Eint]/16)+1);
 				//y2 = 0.5*(erf(8*a_i[jcount]+(x0[Eint]+delta)/16)+1);
@@ -177,6 +182,8 @@ int main()
 				//cout << "y1: " << y1 << endl;
 				//cout << "y2: " << y2 << endl;
  				
+ 				
+ 				//calculate the reweighted expectation value of the energy
 				Reweightexpect=0;
 				
 				for(int k = 0;k<N_SW;k++)
@@ -209,8 +216,10 @@ int main()
 				//cout << "RobMarchcount: " << RobMarchcount << endl;
 				Reweightexpect = Reweightexpect/N_SW - x0[Eint] - 0.5*delta;
 				
+				
+				//calculate the new a
 				a_i_new = a_i[jcount] + 12/(delta*delta*(RobMarchcount+1))*Reweightexpect;
-				cout << "here" << endl;
+				cout << "a: " << a_i_new << endl;
 				RobMarchcount = RobMarchcount + 1;
 			
 				
@@ -220,7 +229,7 @@ int main()
 			a[Eint] = a[Eint] + a_i_new/Njacknife;
 			
 		}
-		
+		//calculation for error and to get rho from a
 		s2[Eint] = 0;
 		for(int i=0;i<Njacknife;i++)
 		{
@@ -292,7 +301,8 @@ int main()
 		myfilemonopoledens << rho[Eint] << " \n";
 		cout << "Reweightexpect: " << Reweightexpect << endl;
 		cout << "a: " << a[Eint] << endl;
-		cout << "Energyinterval: " << Eint*delta << endl;
+		cout << "Energyinterval: " << Eint*delta/3 << endl;
+		cout << "Energy: " << calcaction(theta,neighbour,beta)/3 << endl;
 		cout << " " << endl;
 		
 	}
@@ -463,6 +473,7 @@ void metropolisupdateconst(double theta[V][d],double a,double beta, int neighbou
 	double save;
 	int counter1=0;
 	int counter2=0;
+	int counter3=0;
 	
 	for(int n=0;n<nsweeps;n++)
 	{
@@ -509,6 +520,7 @@ void metropolisupdateconst(double theta[V][d],double a,double beta, int neighbou
 					{
 						theta[i][j]=save;
 						j=j-1;
+						counter3= counter3+1;
 						//cout << offer <<  "    " << calcaction(theta,neighbour,beta) << "i: " << i << " j: " << j+1 << endl;
 					}
 					
@@ -519,7 +531,12 @@ void metropolisupdateconst(double theta[V][d],double a,double beta, int neighbou
 			
 		}
 	}
-	cout << counter1 << " " << counter2 <<endl;
+	//if(counter1<10)
+	{
+		//cout << "counter1: "<< counter1 << " counter2: " << counter2 << " counter3: " << counter3 << endl;
+		cout << "ratio1: " << double(counter1)/double(counter2) << " ratio2: " << double(counter1)/double(counter3) << endl;
+	}
+	
 	
 }
 
@@ -542,6 +559,7 @@ double calcaction(double theta[V][d],  int neighbour[V][2*d],double beta)
 		
 	}
 	S = beta*S/double(V);
+	//S = S/double(V);
 	return S;
 }
 
@@ -563,78 +581,34 @@ double plaquchange(double theta[V][d], int neighbour[V][2*d],int i, int mu, int 
 	return changedplaqu;
 }
 
-
-
-
-
-
-
-
-
-
-float my_erfinvf (float a)
+void findEint(double theta[V][d],int neighbour[V][2*d], double beta, double Eint, double delta)
 {
-    float p, r, t;
-    t = fmaf (a, 0.0f - a, 1.0f);
-    t = my_logf (t);
-    if (fabsf(t) > 6.125f) { // maximum ulp error = 2.35793
-        p =              3.03697567e-10f; //  0x1.4deb44p-32 
-        p = fmaf (p, t,  2.93243101e-8f); //  0x1.f7c9aep-26 
-        p = fmaf (p, t,  1.22150334e-6f); //  0x1.47e512p-20 
-        p = fmaf (p, t,  2.84108955e-5f); //  0x1.dca7dep-16 
-        p = fmaf (p, t,  3.93552968e-4f); //  0x1.9cab92p-12 
-        p = fmaf (p, t,  3.02698812e-3f); //  0x1.8cc0dep-9 
-        p = fmaf (p, t,  4.83185798e-3f); //  0x1.3ca920p-8 
-        p = fmaf (p, t, -2.64646143e-1f); // -0x1.0eff66p-2 
-        p = fmaf (p, t,  8.40016484e-1f); //  0x1.ae16a4p-1 
-    } else { // maximum ulp error = 2.35456
-        p =              5.43877832e-9f;  //  0x1.75c000p-28 
-        p = fmaf (p, t,  1.43286059e-7f); //  0x1.33b458p-23 
-        p = fmaf (p, t,  1.22775396e-6f); //  0x1.49929cp-20 
-        p = fmaf (p, t,  1.12962631e-7f); //  0x1.e52bbap-24 
-        p = fmaf (p, t, -5.61531961e-5f); // -0x1.d70c12p-15 
-        p = fmaf (p, t, -1.47697705e-4f); // -0x1.35be9ap-13 
-        p = fmaf (p, t,  2.31468701e-3f); //  0x1.2f6402p-9 
-        p = fmaf (p, t,  1.15392562e-2f); //  0x1.7a1e4cp-7 
-        p = fmaf (p, t, -2.32015476e-1f); // -0x1.db2aeep-3 
-        p = fmaf (p, t,  8.86226892e-1f); //  0x1.c5bf88p-1 
-    }
-    r = a * p;
-    return r;
-}
-
-
-float my_logf (float a)
-{
-    float i, m, r, s, t;
-    int e;
-
-    m = frexpf (a, &e);
-    if (m < 0.666666667f) { // 0x1.555556p-1
-        m = m + m;
-        e = e - 1;
-    }
-    i = (float)e;
-    /* m in [2/3, 4/3] */
-    m = m - 1.0f;
-    s = m * m;
-    /* Compute log1p(m) for m in [-1/3, 1/3] */
-    r =             -0.130310059f;  // -0x1.0ae000p-3
-    t =              0.140869141f;  //  0x1.208000p-3
-    r = fmaf (r, s, -0.121484190f); // -0x1.f19968p-4
-    t = fmaf (t, s,  0.139814854f); //  0x1.1e5740p-3
-    r = fmaf (r, s, -0.166846052f); // -0x1.55b362p-3
-    t = fmaf (t, s,  0.200120345f); //  0x1.99d8b2p-3
-    r = fmaf (r, s, -0.249996200f); // -0x1.fffe02p-3
-    r = fmaf (t, m, r);
-    r = fmaf (r, m,  0.333331972f); //  0x1.5554fap-2
-    r = fmaf (r, m, -0.500000000f); // -0x1.000000p-1
-    r = fmaf (r, s, m);
-    r = fmaf (i,  0.693147182f, r); //  0x1.62e430p-1 // log(2)
-    if (!((a > 0.0f) && (a <= 3.40282346e+38f))) { // 0x1.fffffep+127
-        r = a + a;  // silence NaNs if necessary
-        if (a  < 0.0f) r = ( 0.0f / 0.0f); //  NaN
-        if (a == 0.0f) r = (-1.0f / 0.0f); // -Inf
-    }
-    return r;
+	bool Efound = false;
+	
+	for(int i=0;i<V;i=i+2)
+	{
+		for(int j=0;j<d;j++)
+		{
+			theta[i][j] = 0;
+			if(calcaction(theta,neighbour,beta)>=Eint && calcaction(theta,neighbour,beta)<=(Eint+delta))
+			{
+				i=V;
+				j=d;
+				Efound = true;
+			}
+		}
+	}
+	if(Efound == false)
+	for(int i=0;i<V;i=i+2)
+	{
+		for(int j=0;j<d;j++)
+		{
+			theta[i][j] = PI;
+			if(calcaction(theta,neighbour,beta)>=Eint && calcaction(theta,neighbour,beta)<=(Eint+delta))
+			{
+				i=V;
+				j=d;
+			}
+		}
+	}
 }
