@@ -2,4 +2,6 @@
 *.sw[op]
 3d_U1_ora
 4d_U1_mono
+3d_U1_LLR
+4d_U1_LLR
 gauss_LLR

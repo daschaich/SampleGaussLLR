@@ -51,7 +51,7 @@ int main()
     
     
     string line;
-	string saver[9];
+	string saver[11];
 	int savercounter = 0;
 	ifstream myfileinput("inputLLRU(1).txt");
 	if (myfileinput.is_open())
@@ -132,6 +132,19 @@ int main()
     epsilonstring >> epsilon;
     cout << epsilon << endl;
     
+    string Njacknife1 = saver[9].substr(saver[9].find("=")+1);
+    stringstream Njacknifestring(Njacknife1);
+    int Njacknife = 0;
+    Njacknifestring >> Njacknife;
+    cout << Njacknife << endl;
+    
+    string ait1 = saver[10].substr(saver[10].find("=")+1);
+    stringstream aitstring(ait1);
+    int ait=0;
+    aitstring >> ait;
+    cout << ait << endl;
+     
+    
 	
 	int neighbour[V][2*d];
 	neibinit(neighbour,n);
@@ -144,7 +157,7 @@ int main()
 	//should be int((Emax-Emin)/delta+1);
 	
 
-	int Njacknife = 20;
+	
 	//int Naverage = 10000;
 	
 	double x0[int(Emax/delta)];  //lower end of energy interval
@@ -181,6 +194,8 @@ int main()
 	myfileavar.open("avar.txt");
 	ofstream myfilerhoerror;
 	myfilerhoerror.open("rhoerror.txt");
+	ofstream myfileajack;
+	myfileajack.open("ajack.txt");
 	
 	for(int Eint=0;Eint<=((Emax-Emin)/delta);Eint++) //scans through the energy intervals
 	{
@@ -212,7 +227,7 @@ int main()
 			Einterval = false;
 			
 			//while(abs(a_i_new-a_i[jcount]) > epsilon) //only stop rob march if a doesnt change much anymore
-			for(int acounter=0; acounter<150; acounter++)
+			for(int acounter=0; acounter<ait; acounter++)
 			{
 				
 				cout << "difference " << a_i_new-a_i[jcount] << endl;
@@ -316,6 +331,7 @@ int main()
 			}
 			
 			a_i[jcount] = a_i_new;
+			myfileajack << a_i[jcount] << endl;
 			a[Eint] = a[Eint] + a_i_new/Njacknife;
 			
 		}
@@ -415,6 +431,7 @@ int main()
 		myfilerhoerror.close();
 		myfileoutput.close();
 		myfileoutputinnerloop.close();
+		myfileajack.close();
 	
 }
 
