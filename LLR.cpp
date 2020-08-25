@@ -155,9 +155,8 @@ int main()
   double a[int(Emax/delta)];
   double a_i[Njacknife];
   double a_i_new;
-  int RobMarchcount; //number of iteration of the rob march algorithm
   double Reweightexpect; //Reweighted expectationvalue of the energy
-  double meassurement[N_SW];
+  double measurement[N_SW];
   double varianz;
 
   double s2[int(Emax/delta)]; //variance
@@ -169,7 +168,7 @@ int main()
   double rhojack[Njacknife];
   double rho[int(Emax/delta)];
   double errorrho[int(Emax/delta)];
-
+  double td;
 
   ofstream myfilerhovalues;
   myfilerhovalues.open("rhovalues.txt");
@@ -208,19 +207,14 @@ int main()
         a_i_new = a[Eint-1];
       }
 
-      RobMarchcount = 0;
-
-      Reweightexpect  = 10.0*epsilon;
-
       filllinks(theta,2,V);
       Einterval = false;
 
       //while(abs(a_i_new-a_i[jcount]) > epsilon) //only stop rob march if a doesnt change much anymore
-      for(int acounter=0; acounter<ait; acounter++)
+      for(int RMcount=0; RMcount<ait; RMcount++)
       {
-
         cout << "difference " << a_i_new-a_i[jcount] << endl;
-        myfileoutputinnerloop << "difference " << a_i_new-a_i[jcount] << " \n";
+        myfileoutputinnerloop << "difference " << a_i_new-a_i[jcount] << endl;
 
         a_i[jcount] = a_i_new;
 
@@ -229,89 +223,48 @@ int main()
         //finds the right energy intervall starting from the maximum energy (all link variables set to 0)
         if(Einterval == false)
         {
-
-          //while(Einterval==false)
-          //{
-
-
           findEint(theta,neighbour,beta,x0[Eint],delta,V);
           Einterval = true;
           cout << "found interval" << endl;
           metropolisupdateconst(theta,1.0,beta,neighbour,2*N_TH,x0[Eint],delta,V);
-
-          //}
         }
 
         cout << "action reached: " << calcaction(theta,neighbour,beta,V)/V << endl;
         //cout << "a " << a_i[jcount] << endl;
+        metropolisupdateconst(theta,1.0,beta,neighbour,N_TH,x0[Eint],delta,V);
 
-        /*if(RobMarchcount == 1)
-          {
-          metropolisupdate(theta,a_i[jcount],beta,neighbour,N_TH);
-          }
-          */
-        //restricted metropolis updates once the right energy interval is found
-        //else
-        {
-          metropolisupdateconst(theta,1.0,beta,neighbour,N_TH,x0[Eint],delta,V);
-        }
-
-
-
-        cout << "RobMarchcount " <<  RobMarchcount << " Energy " <<  calcaction(theta,neighbour,beta,V)/V << endl;
-        myfileoutputinnerloop << "RobMarchcount " <<  RobMarchcount << " Energy " <<  calcaction(theta,neighbour,beta,V)/V << " \n";
-        //y1 = 0.5*(erf(8*a_i[jcount]+x0[Eint]/16)+1);
-        //y2 = 0.5*(erf(8*a_i[jcount]+(x0[Eint]+delta)/16)+1);
-
-        //cout << "y1: " << y1 << endl;
-        //cout << "y2: " << y2 << endl;
-
+        td = calcaction(theta,neighbour,beta,V);
+        cout << "RMcount " <<  RMcount << " Energy " << td/V << endl;
+        myfileoutputinnerloop << "RMcount " <<  RMcount << " Energy " << td/V << endl;
 
         //calculate the reweighted expectation value of the energy
         Reweightexpect=0;
-        varianz=0;
-
         for(int k = 0;k<N_SW;k++)
         {
-          meassurement[k] = calcaction(theta,neighbour,beta,V);
-          Reweightexpect = Reweightexpect + meassurement[k];
+          measurement[k] = calcaction(theta,neighbour,beta,V);
+          Reweightexpect += measurement[k];
+          td = Reweightexpect / (k + 1) - x0[Eint] - 0.5*delta;
+          cout << "measurement[" << k << "] = " << measurement[k] << " --> Reweightexpect = " << td;
+          cout << " a = " << a_i[jcount] + 12.0 * td / (delta*delta*(RMcount+1)) << endl;
           metropolisupdateconst(theta,a_i[jcount],beta,neighbour,nskip,x0[Eint],delta,V);
         }
-        Reweightexpect = Reweightexpect/N_SW;
+        Reweightexpect /= N_SW;
 
-        //cout << "RobMarchcount: " << RobMarchcount << endl;
+        varianz=0;
         for(int k=0;k<N_SW;k++)
-        {
-          varianz = varianz + pow(meassurement[k]-Reweightexpect,2);
-        }
-        varianz = varianz/N_SW;
+          varianz += pow(measurement[k]-Reweightexpect,2);
+        varianz /= N_SW;
 
         Reweightexpect = Reweightexpect - x0[Eint] - 0.5*delta;
 
-
-
         //calculate the new a
-        //a_i_new = a_i[jcount] + Reweightexpect/varianz;
-        //if(a_i_new<=0)
-        {
-          a_i_new = a_i[jcount] + 12/(delta*delta*(RobMarchcount+1))*Reweightexpect;
-          //a_i_new = a_i[jcount] + 12/(delta*delta)*Reweightexpect;
-        }
-        //a_i_new = a_i[jcount] - 12/(delta*delta*(RobMarchcount+1))*Reweightexpect;
-        //if(a_i_new >0)
-        //{
-        //  a_i_new = a_i[jcount] + 12/(delta*delta*(RobMarchcount+1))*Reweightexpect;
-        //}
+        a_i_new = a_i[jcount] + 12/(delta*delta*(RMcount+1))*Reweightexpect;
         cout << "Reweight expect: " << Reweightexpect << endl;
         cout << "var: " << varianz << endl;
         cout << "a: " << a_i_new << endl;
-        myfileoutputinnerloop << a_i_new << " \n";
-        myfileoutputinnerloop <<  "a: " << a_i_new << " \n";
-        myfileoutputinnerloop << "Reweight expect: " << Reweightexpect << " \n";
-        myfileoutputinnerloop <<  "var: " << varianz << " \n";
-        RobMarchcount = RobMarchcount + 1;
-
-
+        myfileoutputinnerloop <<  "a: " << a_i_new << endl;
+        myfileoutputinnerloop << "Reweight expect: " << Reweightexpect << endl;
+        myfileoutputinnerloop <<  "var: " << varianz << endl;
       }
 
       a_i[jcount] = a_i_new;
@@ -394,11 +347,12 @@ int main()
     myfileavalues << a[Eint] << " \n";
     myfileavar << s2[Eint] << " \n";
     myfilerhoerror << errorrho[Eint] << endl;
-    myfileoutput << "Reweightexpect: " << Reweightexpect << "a: " << a[Eint] << "Energyinterval: " << Eint*delta/6/V <<"Energy: " << calcaction(theta,neighbour,beta,V)/6/V << " \n";
+    td = calcaction(theta,neighbour,beta,V);
+    myfileoutput << "Reweightexpect: " << Reweightexpect << "a: " << a[Eint] << "Energyinterval: " << Eint*delta/6/V <<"Energy: " << td/6/V << " \n";
     cout << "Reweightexpect: " << Reweightexpect << endl;
     cout << "a: " << a[Eint] << endl;
     cout << "Energyinterval: " << Eint*delta/6/V << endl;
-    cout << "Energy: " << calcaction(theta,neighbour,beta,V)/6/V << endl;
+    cout << "Energy: " << td/6/V << endl;
     cout << " " << endl;
 
   }
@@ -801,6 +755,7 @@ double plaquchange(double theta[][d], int neighbour[][2*d],int i, int mu, int nu
 void findEint(double theta[][d],int neighbour[][2*d], double beta, double Eint, double delta,int V)
 {
   bool Efound = false;
+  double td;
 
   if(Efound == false)
   {
@@ -812,7 +767,8 @@ void findEint(double theta[][d],int neighbour[][2*d], double beta, double Eint, 
         {
           theta[i][j] = -k*PI/16;
           //cout << "Action/V: " << calcaction(theta,neighbour,beta,V)/V << endl;
-          if(calcaction(theta,neighbour,beta,V)>=(Eint) && calcaction(theta,neighbour,beta,V)<=((Eint+delta)))
+          td = calcaction(theta,neighbour,beta,V);
+          if(td>=(Eint) && td<=((Eint+delta)))
           {
             i=V;
             j=d;
