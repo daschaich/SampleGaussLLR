@@ -221,6 +221,7 @@ int main()
         //cout << Einterval << endl;
 
         //finds the right energy intervall starting from the maximum energy (all link variables set to 0)
+        // Only runs for RMcount=0 and could be moved outside RMcount loop
         if(Einterval == false)
         {
           findEint(theta,neighbour,beta,x0[Eint],delta,V);
@@ -231,7 +232,7 @@ int main()
 
         cout << "action reached: " << calcaction(theta,neighbour,beta,V)/V << endl;
         //cout << "a " << a_i[jcount] << endl;
-        metropolisupdateconst(theta,1.0,beta,neighbour,N_TH,x0[Eint],delta,V);
+        metropolisupdateconst(theta,a_i[jcount],beta,neighbour,N_TH,x0[Eint],delta,V);
 
         td = calcaction(theta,neighbour,beta,V);
         cout << "RMcount " <<  RMcount << " Energy " << td/V << endl;
@@ -486,7 +487,6 @@ void metropolisupdate(double theta[][d],double a,double beta, int neighbour[][2*
   double offer; //new offered linkvar
   double rho, r; //Probabilities for acceptance/rejection
 
-
   for(int n=0;n<nsweeps;n++)
   {
     for(int i=0;i<V;i++)
@@ -497,46 +497,30 @@ void metropolisupdate(double theta[][d],double a,double beta, int neighbour[][2*
 
         if(j==0)
         {
-
           rho = exp(-beta*(-a)*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],0,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,1,V))+cos(plaqu(theta,neighbour,i,0,2,V))+cos(plaqu(theta,neighbour,i,0,3,V))+cos(plaqu(theta,neighbour,neighbour[i][5],0,1,V))+cos(plaqu(theta,neighbour,neighbour[i][6],0,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],0,3,V))));
-
         }
 
         else if(j==1)
         {
-
           rho = exp(-beta*(-a)*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],1,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,1,V))+cos(plaqu(theta,neighbour,i,1,2,V))+cos(plaqu(theta,neighbour,i,1,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1,V))+cos(plaqu(theta,neighbour,neighbour[i][6],1,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],1,3,V))));
-
         }
 
         else if(j==2)
         {
-
           rho = exp(-beta*(-a)*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],2,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,2,V))+cos(plaqu(theta,neighbour,i,1,2,V))+cos(plaqu(theta,neighbour,i,2,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,2,V))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],2,3,V))));
-
         }
 
         else
         {
-
           rho = exp(-beta*(-a)*(-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],2,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,3,V))+cos(plaqu(theta,neighbour,i,1,3,V))+cos(plaqu(theta,neighbour,i,2,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,3,V))+cos(plaqu(theta,neighbour,neighbour[i][5],1,3,V))+cos(plaqu(theta,neighbour,neighbour[i][6],2,3,V))));
-
         }
 
         r = dist1(rng);
-
         if(r<=rho)
-        {
-
           theta[i][j]=offer;
-
-        }
-
       }
-
     }
   }
-
 }
 
 void metropolisupdateconst(double theta[][d],double a,double beta, int neighbour[][2*d], int nsweeps,double E,double delta, int V)
@@ -563,30 +547,22 @@ void metropolisupdateconst(double theta[][d],double a,double beta, int neighbour
 
         if(j==0)
         {
-
           rho = exp(-beta*(-a)*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],0,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,1,V))+cos(plaqu(theta,neighbour,i,0,2,V))+cos(plaqu(theta,neighbour,i,0,3,V))+cos(plaqu(theta,neighbour,neighbour[i][5],0,1,V))+cos(plaqu(theta,neighbour,neighbour[i][6],0,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],0,3,V))));
-
         }
 
         else if(j==1)
         {
-
           rho = exp(-beta*(-a)*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],1,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,1,V))+cos(plaqu(theta,neighbour,i,1,2,V))+cos(plaqu(theta,neighbour,i,1,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1,V))+cos(plaqu(theta,neighbour,neighbour[i][6],1,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],1,3,V))));
-
         }
 
         else if(j==2)
         {
-
           rho = exp(-beta*(-a)*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],2,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,2,V))+cos(plaqu(theta,neighbour,i,1,2,V))+cos(plaqu(theta,neighbour,i,2,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,2,V))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],2,3,V))));
-
         }
 
         else
         {
-
           rho = exp(-beta*(-a)*(-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],2,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,3,V))+cos(plaqu(theta,neighbour,i,1,3,V))+cos(plaqu(theta,neighbour,i,2,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,3,V))+cos(plaqu(theta,neighbour,neighbour[i][5],1,3,V))+cos(plaqu(theta,neighbour,neighbour[i][6],2,3,V))));
-
         }
 
         r = dist1(rng);
@@ -595,40 +571,28 @@ void metropolisupdateconst(double theta[][d],double a,double beta, int neighbour
 
         if(r<=rho)
         {
-
-
-
           if(j==0)
           {
-
             ECALCtry = ECALC -beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],0,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,1,V))+cos(plaqu(theta,neighbour,i,0,2,V))+cos(plaqu(theta,neighbour,i,0,3,V))+cos(plaqu(theta,neighbour,neighbour[i][5],0,1,V))+cos(plaqu(theta,neighbour,neighbour[i][6],0,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],0,3,V)));
-
           }
 
           else if(j==1)
           {
-
             ECALCtry = ECALC -beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],1,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,1,V))+cos(plaqu(theta,neighbour,i,1,2,V))+cos(plaqu(theta,neighbour,i,1,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1,V))+cos(plaqu(theta,neighbour,neighbour[i][6],1,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],1,3,V)));
-
           }
 
           else if(j==2)
           {
-
             ECALCtry = ECALC - beta*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],2,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,2,V))+cos(plaqu(theta,neighbour,i,1,2,V))+cos(plaqu(theta,neighbour,i,2,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,2,V))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],2,3,V)));
-
           }
 
           else
           {
-
             ECALCtry = ECALC - beta*(-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],2,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,3,V))+cos(plaqu(theta,neighbour,i,1,3,V))+cos(plaqu(theta,neighbour,i,2,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,3,V))+cos(plaqu(theta,neighbour,neighbour[i][5],1,3,V))+cos(plaqu(theta,neighbour,neighbour[i][6],2,3,V)));
-
           }
 
           save = theta[i][j];
           theta[i][j]=offer;
-
 
           if((ECALCtry)<(E+delta) && (ECALCtry)>=E)
           {
@@ -645,11 +609,8 @@ void metropolisupdateconst(double theta[][d],double a,double beta, int neighbour
           }
 
           //cout << "ECALC: " << ECALC/V << " calcaction: " << calcaction(theta,neighbour,beta,V) << endl;
-
         }
-
       }
-
     }
   }
   /*
@@ -660,7 +621,6 @@ void metropolisupdateconst(double theta[][d],double a,double beta, int neighbour
   }
   */
   //cout << counter1 << " " << counter2 << " " << counter3 << endl;
-
 }
 
 
@@ -677,34 +637,25 @@ void metropolisupdateEfind(double theta[][d],double beta,int neighbour[][2*d],in
 
   if(j==0)
   {
-
     rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],0,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,1,V))+cos(plaqu(theta,neighbour,i,0,2,V))+cos(plaqu(theta,neighbour,i,0,3,V))+cos(plaqu(theta,neighbour,neighbour[i][5],0,1,V))+cos(plaqu(theta,neighbour,neighbour[i][6],0,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],0,3,V))));
-
   }
 
   else if(j==1)
   {
-
     rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,1,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],1,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,1,V))+cos(plaqu(theta,neighbour,i,1,2,V))+cos(plaqu(theta,neighbour,i,1,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,1,V))+cos(plaqu(theta,neighbour,neighbour[i][6],1,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],1,3,V))));
-
   }
 
   else if(j==2)
   {
-
     rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,2,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][7],2,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,2,V))+cos(plaqu(theta,neighbour,i,1,2,V))+cos(plaqu(theta,neighbour,i,2,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,2,V))+cos(plaqu(theta,neighbour,neighbour[i][5],1,2,V))+cos(plaqu(theta,neighbour,neighbour[i][7],2,3,V))));
-
   }
 
   else
   {
-
     rho = exp(-beta*(-cos(plaquchange(theta,neighbour,i,0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,i,2,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][4],0,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][5],1,3,offer,i,j,V))-cos(plaquchange(theta,neighbour,neighbour[i][6],2,3,offer,i,j,V))+cos(plaqu(theta,neighbour,i,0,3,V))+cos(plaqu(theta,neighbour,i,1,3,V))+cos(plaqu(theta,neighbour,i,2,3,V))+cos(plaqu(theta,neighbour,neighbour[i][4],0,3,V))+cos(plaqu(theta,neighbour,neighbour[i][5],1,3,V))+cos(plaqu(theta,neighbour,neighbour[i][6],2,3,V))));
-
   }
 
   r = dist1(rng);
-
   if(r<=rho)
     theta[i][j]=offer;
 }
@@ -725,11 +676,8 @@ double calcaction(double theta[][d], int neighbour[][2*d], double beta,  int V)
         }
       }
     }
-
   }
-  //S = beta*S/double(V);
-  //S = S/double(V);
-  S=beta*S;
+  S *= beta;
   return S;
 }
 
