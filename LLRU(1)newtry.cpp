@@ -25,11 +25,11 @@ const int n=6; //length of the lattice
 const int V=pow(n,d); //Number of lattice sites
 
 const int N_TH=100; //Thermalization steps
-const int nskip=10; //skip steps
-const int N_SW=100; //number of sweeps
+const int nskip=1; //skip steps
+const int N_SW=10000; //number of sweeps
 
 
-const double Emin = 0.4*3; //minimum energy that is probed
+const double Emin = 0.45*3; //minimum energy that is probed
 const double Emax = 0.6*3; //maximum energy that is probed
 const double delta =0.1*3; //size of energy interval
 
@@ -54,20 +54,17 @@ uniform_real_distribution<> dis(0, 1);
 int main()
 {
 	double epsilon = 0.00001; // precision of rob march algorithm
+	double tr;
 	
 	
-	
-	rng.seed(time(NULL));
+	//rng.seed(time(NULL));
+	rng.seed(42.0);
 	
 	int neighbour[V][2*d];
 	neibinit(neighbour);
 	double theta[V][d];
 	double S[N_SW]; //Action
 	bool Einterval = false;
-	
-	
-	
-	
 	
 
 	int Njacknife = 1;
@@ -129,16 +126,10 @@ int main()
 			filllinks(theta,2);
 			Einterval=false;
 			
-			while(abs(a_i_new-a_i[jcount]) > epsilon) //only stop rob march if a doesnt change much anymore
+			while(fabs(a_i_new-a_i[jcount]) > epsilon) //only stop rob march if a doesnt change much anymore
 			{
-				
-				cout << "difference " << a_i_new-a_i[jcount] << endl;
-				
+				cout << "a_i changing from " << a_i[jcount] << " to " << a_i_new << " (difference " << a_i_new-a_i[jcount] << ")" << endl;
 				a_i[jcount] = a_i_new;
-				
-				
-				
-				
 				
 				//cout << Einterval << endl;
 				
@@ -150,10 +141,11 @@ int main()
 					{	
 						//cout << "here Einterval false " << calcaction(theta,neighbour,beta)/3 << endl;
 						metropolisupdate(theta,1.0,beta,neighbour,1);
-						if(calcaction(theta,neighbour,beta)<=(x0[Eint]+delta) && calcaction(theta,neighbour,beta)>=x0[Eint])
+            tr = calcaction(theta,neighbour,beta);
+						if(tr<=(x0[Eint]+delta) && tr>=x0[Eint])
 						{
 							Einterval=true;
-							cout << "found Energy interval  " << calcaction(theta,neighbour,beta)/3 <<  endl;
+							cout << "found Energy " << tr << " in interval [" << x0[Eint] << ", " << x0[Eint]+delta << "]" <<  endl;
 						}
 					}
 				}
@@ -169,10 +161,8 @@ int main()
 				//restricted metropolis updates once the right energy interval is found
 				//else
 				
+        cout << "Doing " << N_TH << " thermalization sweeps" << endl;
 				metropolisupdateconst(theta,a_i[jcount],beta,neighbour,N_TH,x0[Eint],delta);
-				
-				
-				
 				
 				cout << "RobMarchcount " <<  RobMarchcount << " Energy " <<  calcaction(theta,neighbour,beta)/3 << endl;
 				
@@ -188,7 +178,7 @@ int main()
 				
 				for(int k = 0;k<N_SW;k++)
 				{
-					Reweightexpect = Reweightexpect + calcaction(theta,neighbour,beta);
+					Reweightexpect += calcaction(theta,neighbour,beta);
 					metropolisupdateconst(theta,a_i[jcount],beta,neighbour,nskip,x0[Eint],delta);
 				}
 				
@@ -218,17 +208,16 @@ int main()
 				
 				
 				//calculate the new a
-				a_i_new = a_i[jcount] + 12/(delta*delta*(RobMarchcount+1))*Reweightexpect;
+        tr = 12.0 / (delta*delta*(double(RobMarchcount) + 10.0))*Reweightexpect;
+        cout << "change = " << tr << endl;
+				a_i_new = a_i[jcount] + tr;
 				cout << "a: " << a_i_new << endl;
-				RobMarchcount = RobMarchcount + 1;
-			
-				
+				RobMarchcount++;
 			}
-			
 			a_i[jcount] = a_i_new;
 			a[Eint] = a[Eint] + a_i_new/Njacknife;
-			
 		}
+		
 		//calculation for error and to get rho from a
 		s2[Eint] = 0;
 		for(int i=0;i<Njacknife;i++)
@@ -307,8 +296,6 @@ int main()
 		
 	}
 		myfilemonopoledens.close();
-	
-	
 }
 
 
@@ -470,11 +457,12 @@ void metropolisupdateconst(double theta[V][d],double a,double beta, int neighbou
 	uniform_real_distribution<> dist1(0,1);
 	double offer; //new offered linkvar
 	double rho, r; //Probabilities for acceptance/rejection
-	double save;
+	double save, tr;
 	int counter1=0;
 	int counter2=0;
 	int counter3=0;
-	
+
+  cout << nsweeps << " constrained sweeps with a=" << a << ", E=" << E << " and delta=" << delta << endl;
 	for(int n=0;n<nsweeps;n++)
 	{
 		for(int i=0;i<V;i++)
@@ -506,38 +494,34 @@ void metropolisupdateconst(double theta[V][d],double a,double beta, int neighbou
 				}
 			 	r = dist1(rng);
 			 	//cout << r << " " << rho << endl;
-			 	counter2 = counter2 +1;
+			 	counter2++;
 			 	if(r<=rho)
 			 	{
 			 		save = theta[i][j];
 			 		theta[i][j]=offer;
-			 		if(calcaction(theta,neighbour,beta)<(E+delta) && calcaction(theta,neighbour,beta)>=E)
+          tr = calcaction(theta,neighbour,beta);
+			 		if(tr < (E+delta) && tr >= E)
 			 		{
 			 			//cout << "offer accepted " << i <<   endl;
-						counter1 = counter1 +1;	
+						counter1++;
 					}
 					else
 					{
 						theta[i][j]=save;
 						j=j-1;
-						counter3= counter3+1;
+						counter3++;
 						//cout << offer <<  "    " << calcaction(theta,neighbour,beta) << "i: " << i << " j: " << j+1 << endl;
 					}
-					
-			 	
 				}
-				
 			}
-			
 		}
 	}
 	//if(counter1<10)
 	{
 		//cout << "counter1: "<< counter1 << " counter2: " << counter2 << " counter3: " << counter3 << endl;
-		cout << "ratio1: " << double(counter1)/double(counter2) << " ratio2: " << double(counter1)/double(counter3) << endl;
+		cout << counter1 << " of " << counter2 << " updates accepted (" << 100 * double(counter1)/double(counter2) << "%)" << endl;
+    cout << counter3 << " updates rejected due to leaving energy interval" << endl;
 	}
-	
-	
 }
 
 

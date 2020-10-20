@@ -30,7 +30,7 @@ int main()
 	double Emax = 40;
 	double delta = 0.5;
 	int Njacknife = 20;
-	int Naverage = 1000;
+	int Naverage = 10000;
 	
 	double x0[int(Emax/delta)];
 	double a[int(Emax/delta)];
