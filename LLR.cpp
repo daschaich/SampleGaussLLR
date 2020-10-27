@@ -22,6 +22,7 @@ const int d=4; //Dimension
 random_device rd;
 mt19937 gen(rd());
 uniform_real_distribution<> dis(0, 1);
+uniform_real_distribution<> dist(-PI, PI);
 // -----------------------------------------------------------------
 
 
@@ -86,10 +87,7 @@ void  neibinit(int neib[][2*d], int n) {
 }
 
 void filllinks(double theta[][d],int start, int V) {
-  uniform_real_distribution<> dist(-PI, PI);
-
-  if(start == 1)
-  {
+  if(start == 1) {
     for(int i=0;i<V;i++)
     {
       for(int j=0;j<d;j++)
@@ -97,8 +95,7 @@ void filllinks(double theta[][d],int start, int V) {
     }
   }
 
-  if(start == 2)
-  {
+  if(start == 2) {
     for(int i=0;i<V;i++)
     {
       for(int j=0;j<d;j++)
@@ -106,8 +103,7 @@ void filllinks(double theta[][d],int start, int V) {
     }
   }
 
-  if(start == 3)
-  {
+  if(start == 3) {
     for(int i=0;i<V;i++)
     {
       for(int j=0;j<d;j++)
@@ -249,8 +245,6 @@ double Sdiff3(double theta[][d], int neighbour[][2*d], double offer, int i, int 
 // -----------------------------------------------------------------
 // MRT updates with and without constraints
 void metropolisupdate(double theta[][d],double a,double beta, int neighbour[][2*d], int nsweeps, int V) {
-  uniform_real_distribution<> dist(-PI, PI);
-  uniform_real_distribution<> dist1(0,1);
   double offer; //new offered linkvar
   double rho, r; //Probabilities for acceptance/rejection
   double td;
@@ -270,7 +264,7 @@ void metropolisupdate(double theta[][d],double a,double beta, int neighbour[][2*
           td = Sdiff3(theta,neighbour,offer,i,V);
 
         rho = exp(beta * a * td);
-        r = dist1(rng);
+        r = dis(rng);
         if(r<=rho)
           theta[i][j]=offer;
       }
@@ -279,8 +273,6 @@ void metropolisupdate(double theta[][d],double a,double beta, int neighbour[][2*
 }
 
 void metropolisupdateconst(double theta[][d],double a,double beta, int neighbour[][2*d], int nsweeps,double E,double delta, int V) {
-  uniform_real_distribution<> dist(-PI, PI);
-  uniform_real_distribution<> dist1(0,1);
   int counter1 = 0, counter2 = 0, counter3 = 0;
   double offer; //new offered linkvar
   double rho, r; //Probabilities for acceptance/rejection
@@ -304,7 +296,7 @@ void metropolisupdateconst(double theta[][d],double a,double beta, int neighbour
           td = Sdiff3(theta,neighbour,offer,i,V);
 
         rho = exp(beta * a * td);
-        r = dist1(rng);
+        r = dis(rng);
 
         counter2++;
 
@@ -340,10 +332,7 @@ void metropolisupdateconst(double theta[][d],double a,double beta, int neighbour
   //cout << counter1 << " " << counter2 << " " << counter3 << endl;
 }
 
-void metropolisupdateEfind(double theta[][d],double beta,int neighbour[][2*d],int i, int j,int V)
-{
-  uniform_real_distribution<> dist(-PI, PI);
-  uniform_real_distribution<> dist1(0,1);
+void metropolisupdateEfind(double theta[][d],double beta,int neighbour[][2*d],int i, int j,int V) {
   double offer; //new offered linkvar
   double rho, r; //Probabilities for acceptance/rejection
   double td;
@@ -360,7 +349,7 @@ void metropolisupdateEfind(double theta[][d],double beta,int neighbour[][2*d],in
     td = Sdiff3(theta,neighbour,offer,i,V);
 
   rho = exp(-beta * td);
-  r = dist1(rng);
+  r = dis(rng);
   if(r<=rho)
     theta[i][j]=offer;
 }
