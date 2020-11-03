@@ -40,8 +40,8 @@ double dclock() {
 // -----------------------------------------------------------------
 // Initialization routines
 // Initialize neighbours with periodic BCs
-void  neibinit(int neib[][2*d], int n) {
-  int  i, n1p, n1m, n2p, n2m, n3p, n3m, n4p, n4m;
+void neibinit(int neib[][2*d], int n) {
+  int i, n1p, n1m, n2p, n2m, n3p, n3m, n4p, n4m;
   for (int n1=0;n1<n;n1++) {
     n1p = n1+1;
     n1m = n1-1;
@@ -469,23 +469,24 @@ int main() {
   bool Einterval = false;
 
   // Arrays only need int((Emax-Emin)/delta+1) elements
-  double x0[int(Emax/delta)];  //lower end of energy interval
-  double a[int(Emax/delta)];
-  double a_i[Njacknife];
+  int Nmax = int(Emax/delta);
+  double *x0 = (double*)malloc(Nmax * sizeof(double));  //lower end of energy interval
+  double *a = (double*)malloc(Nmax * sizeof(double));
+  double *a_i = (double*)malloc(Njacknife * sizeof(double));
   double a_i_new;
   double Reweightexpect; //Reweighted expectationvalue of the energy
-  double measurement[N_SW];
+  double *measurement = (double*)malloc(N_SW * sizeof(double));
   double varianz;
 
-  double s2[int(Emax/delta)]; //variance
+  double *s2 = (double*)malloc(Nmax * sizeof(double)); //variance
   //stuff for calculation of density from a
-  double A[int(Emax/delta)][Njacknife];
+  double A[Nmax][Njacknife];
   double Astar;
-  double var[int(Emax/delta)];
+  double *var = (double*)malloc(Nmax * sizeof(double));
   double T;
-  double rhojack[Njacknife];
-  double rho[int(Emax/delta)];
-  double errorrho[int(Emax/delta)];
+  double *rhojack = (double*)malloc(Njacknife * sizeof(double));
+  double *rho = (double*)malloc(Nmax * sizeof(double));
+  double *errorrho = (double*)malloc(Nmax * sizeof(double));
   double td;
 
   ofstream myfilerhovalues;
