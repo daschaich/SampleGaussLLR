@@ -40,8 +40,8 @@ double dclock() {
 // -----------------------------------------------------------------
 // Initialization routines
 // Initialize neighbours with periodic BCs
-void  neibinit(int neib[][2*d], int n) {
-  int  i, n1p, n1m, n2p, n2m, n3p, n3m, n4p, n4m;
+void neibinit(int neib[][2*d], int n) {
+  int i, n1p, n1m, n2p, n2m, n3p, n3m, n4p, n4m;
   for (int n1=0;n1<n;n1++) {
     n1p = n1+1;
     n1m = n1-1;
@@ -469,23 +469,24 @@ int main() {
   bool Einterval = false;
 
   // Arrays only need int((Emax-Emin)/delta+1) elements
-  double x0[int(Emax/delta)];  //lower end of energy interval
-  double a[int(Emax/delta)];
+  int Nmax = int(Emax/delta);
+  double x0[Nmax];  //lower end of energy interval
+  double a[Nmax];
   double a_i[Njacknife];
   double a_i_new;
   double Reweightexpect; //Reweighted expectationvalue of the energy
   double measurement[N_SW];
   double varianz;
 
-  double s2[int(Emax/delta)]; //variance
+  double s2[Nmax]; //variance
   //stuff for calculation of density from a
-  double A[int(Emax/delta)][Njacknife];
+  double A[Nmax][Njacknife];
   double Astar;
-  double var[int(Emax/delta)];
+  double var[Nmax];
   double T;
   double rhojack[Njacknife];
-  double rho[int(Emax/delta)];
-  double errorrho[int(Emax/delta)];
+  double rho[Nmax];
+  double errorrho[Nmax];
   double td;
 
   ofstream myfilerhovalues;
